@@ -1,0 +1,8 @@
+# Gating y coste para emparejado L–R
+tau_w: 2.0
+m_w: 0.15
+tau_t: 2.0
+m_t: 0.15
+ds_max: 2.0          # |sR - sL| permitido (m)
+w0_init: 1.60
+ema_w_alpha: 0.05    # filtro ancho medio

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>racecar_cone_detection_lidar</name>
+  <version>0.1.0</version>
+  <description>LiDAR-based cone detection to ConeArray for track geometry pipeline</description>
+
+  <maintainer email="mario@example.com">Mario</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>racecar_cone_msgs</depend>
+
+  <export/>
+</package>

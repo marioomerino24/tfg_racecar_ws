@@ -1,0 +1,33 @@
+# Frecuencia de control (Hz)
+rate_hz: 40
+
+# Tópicos
+odom_topic: "/vesc/odom"             # o el que exponga gazebo_odometry.py
+path_topic: "/track/centerline"      # preferible nav_msgs/Path (tu resampler)
+
+# Frames
+odom_frame: "odom"
+base_link_frame: "base_link"
+
+# Geometría vehículo
+wheelbase_L: 0.325          # [m] ajusta a tu URDF/control real
+delta_max_deg: 28.0         # [deg] debe casar con *_steering_hinge_position_controller
+
+# Modo de lookahead: "constant" | "speed" | "curvature" | "hybrid"
+lookahead_mode: "hybrid"
+
+# Parámetros Ld
+L0: 0.8                     # [m] base
+Lmin: 0.4                   # [m]
+Lmax: 2.5                   # [m]
+kv: 0.35                    # [s]   => Ld = L0 + kv*v
+kk: 0.6                     # [m]   => componente 1/|kappa_path| (solo curvature/hybrid)
+eps_kappa: 0.05             # evita división por ~0
+curv_window_m: 0.8          # ventana local para estimar curvatura
+
+# Publicación Ackermann (opcional)
+publish_ackermann: true
+ackermann_topic: "/pure_pursuit/drive"
+
+# Debug
+publish_markers: true

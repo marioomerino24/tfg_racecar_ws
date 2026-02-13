@@ -1,0 +1,9 @@
+<launch>
+  <arg name="cfg" default="$(find racecar_pure_pursuit_control)/config/pp_control.yaml"/>
+  <rosparam command="load" file="$(arg cfg)"/>
+
+  <node pkg="racecar_pure_pursuit_control"
+        type="pure_pursuit_controller.py"
+        name="pure_pursuit_controller"
+        output="screen"/>
+</launch>

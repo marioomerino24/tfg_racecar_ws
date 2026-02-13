@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <rosparam command="load" file="$(find racecar_track_geometry)/config/pairing.yaml" ns="lr_pairing"/>
+  <rosparam command="load" file="$(find racecar_track_geometry)/config/centerline.yaml" ns="centerline"/>
+
+  <node pkg="racecar_track_geometry" type="lr_pairing_node.py" name="lr_pairing" output="screen"/>
+  <!--<node pkg="racecar_track_geometry" type="lr_pairing_debug_viewer.py" name="lr_pairing_debug_viewer" output="screen"/>-->
+  <node pkg="racecar_track_geometry" type="midpoints_node.py" name="midpoints" output="screen"/>
+  <node pkg="racecar_track_geometry" type="centerline_fit_node.py" name="centerline_fit" output="screen"/>
+  <!--<node pkg="racecar_track_geometry" type="centerline_debug_listener.py" name="centerline_debug_listener" output="screen" />-->  
+  <rosparam file="$(find racecar_track_geometry)/config/track_viz.yaml" command="load" ns="track" />
+  <node pkg="racecar_track_geometry" type="track_viz.py" name="track" output="log">
+    
+  </node>
+
+</launch>

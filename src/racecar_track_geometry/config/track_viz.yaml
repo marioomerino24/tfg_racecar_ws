@@ -1,0 +1,88 @@
+# ==================== Parámetros generales ====================
+frame_id: "odom"        # Frame fijo de referencia en RViz
+ns: "track"             # Namespace lógico interno para los markers
+rate_hz: 20.0           # Frecuencia de refresco de markers (Hz)
+lifetime: 0.15          # Tiempo de vida de los markers (segundos)
+
+# ==================== Tópicos de entrada/salida ====================
+topic:
+  # OJO: este debe ser el topic donde se publica el ConeArray bruto.
+  # Si tu ScanToCones publica en /cones/raw, pon aquí "/cones/raw".
+  cones:      "/cones"              # <-- cámbialo a "/cones/raw" si corresponde
+  pairs:      "/cones/pairs"
+  midpoints:  "/track/midpoints"
+  centerline: "/track/centerline"
+
+  # Entradas nuevas (nodos posteriores: centerline y bordes optimizados)
+  centerline_path_in: "/track/centerline_path_opt"
+  left_path:          "/track/left_path_opt"
+  right_path:         "/track/right_path_opt"
+
+  # Salida (relativos: -> /track_viz/markers, /track_viz/centerline_path)
+  markers:          "markers"
+  centerline_path:  "centerline_path"
+
+# ==================== Flags de activación ====================
+enable:
+  cones:               true    # dibujar conos L/R
+  pairs:               true    # dibujar pares (segmentos + anillos + texto)
+  midpoints:           true    # dibujar midpoints
+  centerline:          true    # dibujar centerline (línea + cruces, legacy)
+  centerline_path:     true    # republicar nav_msgs/Path
+
+  # Flags para nodos posteriores
+  centerline_path_in:  true    # visualizar Path de centerline entrante
+  border_paths:        true    # visualizar Paths de bordes izquierdo/derecho
+
+# ==================== Escalas geométricas ====================
+scale:
+  cone:              0.25   # diámetro visual de conos (SPHERE_LIST)
+  midpoint:          0.10   # diámetro visual de midpoints (SPHERE_LIST)
+  pair_width:        0.01   # grosor de líneas entre pares L-R
+  centerline_width:  0.04   # grosor de la línea de centerline
+  centerline_cross:  0.20   # tamaño total de la X en cada nodo de centerline
+  cross_width:       0.01   # grosor de las líneas de las cruces (LINE_LIST)
+  borders_width:     0.05   # grosor de los Paths de bordes L/R
+
+# ==================== Midpoints ====================
+midpoints:
+  z: 0.0            # altura (z) de los midpoints
+
+# ==================== Cruces de centerline ====================
+cross:
+  z: 0.0            # altura (z) de las cruces (X) sobre la trayectoria
+
+# ==================== Parámetros de pares (anillos + texto) ====================
+pairs:
+  ring_radius:     0.22   # radio del anillo alrededor de cada cono
+  ring_z:          0.05   # altura (z) del anillo
+  text_z:          0.25   # altura (z) del texto con índice de pareja
+  text_scale:      0.15   # tamaño de texto (TEXT_VIEW_FACING)
+  ring_width:      0.03   # grosor de línea del anillo (LINE_STRIP)
+  num_circle_pts:  36     # nº de segmentos para aproximar el círculo
+
+# ==================== Índice original de conos (ConeArray) ====================
+cones:
+  idx_text_z:     0.35   # altura (z) del número del índice de cono
+  idx_text_scale: 0.13   # tamaño de la fuente del índice
+  idx_offset_x:   0.25   # offset en X respecto al cono (para que no tape el anillo)
+  idx_offset_y:   0.00   # offset en Y respecto al cono
+
+# ==================== Colores (RGB en [0,1]) ====================
+color:
+  left:        [0.0, 0.5, 1.0]   # conos izquierdos
+  right:       [1.0, 0.8, 0.0]   # conos derechos
+  pairs:       [1.0, 0.5, 0.0]   # segmentos entre pares L-R
+  mid:         [0.6, 0.2, 1.0]   # midpoints
+  centerline:  [0.0, 1.0, 0.0]   # línea de centerline
+  cross:       [1.0, 0.5, 0.0]   # cruces de centerline (por defecto igual que la línea)
+
+  # Paleta de 8 colores llamativos para usar donde quieras
+  palette0:    [1.0, 0.0, 0.0]   # rojo intenso
+  palette1:    [0.0, 1.0, 0.0]   # verde intenso
+  palette2:    [0.0, 0.0, 1.0]   # azul intenso
+  palette3:    [1.0, 1.0, 0.0]   # amarillo
+  palette4:    [1.0, 0.0, 1.0]   # magenta
+  palette5:    [0.0, 1.0, 1.0]   # cian
+  palette6:    [1.0, 0.5, 0.0]   # naranja
+  palette7:    [0.6, 0.2, 1.0]   # púrpura/violeta

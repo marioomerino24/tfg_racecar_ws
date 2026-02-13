@@ -1,0 +1,8 @@
+prefix=/ws/devel
+
+Name: racecar_track_geometry
+Description: Description of racecar_track_geometry
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: rospy std_msgs geometry_msgs visualization_msgs tf racecar_cone_msgs

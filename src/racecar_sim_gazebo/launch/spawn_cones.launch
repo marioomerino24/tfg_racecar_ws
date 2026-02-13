@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Patrón de trazado: corridor | arc | chicane | slalom -->
+  <arg name="pattern"   default="corridor"/>
+
+  <!-- Geometría básica -->
+  <arg name="W"         default="1.6"/>     <!-- ancho de pista (m) -->
+  <arg name="DS"        default="2.0"/>     <!-- separación longitudinal entre pares (m) -->
+  <arg name="N"         default="8"/>       <!-- número de pares -->
+
+  <!-- Posición de arranque del centro de pista -->
+  <arg name="X0"        default="3.0"/>
+  <arg name="Y0"        default="0.0"/>
+  <arg name="YAW0"      default="0.0"/>     <!-- rad, solo corridor/chicane -->
+
+  <!-- Parámetros de cada patrón -->
+  <arg name="ARC_R"     default="12.0"/>    <!-- radio (m), sentido CCW si R>0 -->
+  <arg name="SL_A"      default="0.7"/>     <!-- amplitud eslalon (m) -->
+  <arg name="SL_L"      default="8.0"/>     <!-- longitud de onda eslalon (m) -->
+  <arg name="CH_DY"     default="1.0"/>     <!-- desplazamiento lateral chicane (m) -->
+  <arg name="CH_M"      default="4"/>       <!-- nº pares en primer tramo chicane -->
+
+  <!-- Utilidad -->
+  <arg name="clear_existing" default="true"/> <!-- borra modelos previos con prefijo -->
+  <arg name="prefix"         default="cone"/> <!-- prefijo de nombres a spawnear -->
+
+  <node pkg="racecar_sim_gazebo" type="spawn_cones.py" name="spawn_cones" output="screen">
+    <param name="pattern"     value="$(arg pattern)"/>
+    <param name="W"           value="$(arg W)"/>
+    <param name="DS"          value="$(arg DS)"/>
+    <param name="N"           value="$(arg N)"/>
+    <param name="X0"          value="$(arg X0)"/>
+    <param name="Y0"          value="$(arg Y0)"/>
+    <param name="YAW0"        value="$(arg YAW0)"/>
+    <param name="ARC_R"       value="$(arg ARC_R)"/>
+    <param name="SL_A"        value="$(arg SL_A)"/>
+    <param name="SL_L"        value="$(arg SL_L)"/>
+    <param name="CH_DY"       value="$(arg CH_DY)"/>
+    <param name="CH_M"        value="$(arg CH_M)"/>
+    <param name="clear_existing" value="$(arg clear_existing)"/>
+    <param name="prefix"      value="$(arg prefix)"/>
+  </node>
+</launch>

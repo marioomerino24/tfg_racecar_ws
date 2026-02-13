@@ -1,0 +1,8 @@
+prefix=/ws/devel
+
+Name: racecar_pure_pursuit
+Description: Description of racecar_pure_pursuit
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,13 @@
+<launch>
+  <arg name="cfg" default="$(find racecar_ackermann_mux)/config/mux.yaml"/>
+
+  <!-- Cargar parámetros como privados de /ackermann_cmd_mux -->
+  <rosparam command="load"
+            file="$(arg cfg)"
+            ns="ackermann_cmd_mux" />
+
+  <node pkg="racecar_ackermann_mux"
+        type="ackermann_cmd_simple_mux.py"
+        name="ackermann_cmd_mux"
+        output="screen" />
+</launch>

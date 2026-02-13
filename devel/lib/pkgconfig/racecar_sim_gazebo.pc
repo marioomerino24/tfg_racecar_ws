@@ -1,0 +1,8 @@
+prefix=/ws/devel
+
+Name: racecar_sim_gazebo
+Description: Description of racecar_sim_gazebo
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
