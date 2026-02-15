@@ -1,0 +1,28 @@
+<launch>
+  <!-- ===================== Input ===================== -->
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="laser_frame" default="laser"/>
+
+  <!-- ===================== Output ==================== -->
+  <arg name="out_frame" default="odom"/>
+  <arg name="cones_topic" default="/perception/lidar/cones"/>
+  <arg name="markers_topic" default="/perception/lidar/cones/markers"/>
+  <arg name="debug_topic" default="/perception/lidar/cones/debug"/>
+
+  <!-- ===================== Params ==================== -->
+  <arg name="detector_config" default="$(find racecar_cone_detection_lidar)/config/detector.yaml"/>
+  <rosparam command="load" file="$(arg detector_config)"/>
+
+  <!-- ===================== Node ====================== -->
+  <node pkg="racecar_cone_detection_lidar"
+        type="cone_detector_node.py"
+        name="cone_detector"
+        output="screen">
+    <param name="input/scan_topic" value="$(arg scan_topic)"/>
+    <param name="input/laser_frame" value="$(arg laser_frame)"/>
+    <param name="output/frame" value="$(arg out_frame)"/>
+    <param name="output/cones_topic" value="$(arg cones_topic)"/>
+    <param name="output/markers_topic" value="$(arg markers_topic)"/>
+    <param name="debug/serial_topic" value="$(arg debug_topic)"/>
+  </node>
+</launch>

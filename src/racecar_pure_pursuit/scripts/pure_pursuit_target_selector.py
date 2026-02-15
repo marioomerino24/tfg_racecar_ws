@@ -24,7 +24,7 @@ class PurePursuitTargetSelector(object):
         # Params
         self.rate_hz = rospy.get_param("~rate_hz", 40)
         self.odom_topic = rospy.get_param("~odom_topic", "/vesc/odom")
-        self.path_topic = rospy.get_param("~path_topic", "/track/centerline")
+        self.path_topic = rospy.get_param("~path_topic", "/planning/track/centerline_path")
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.base_link_frame = rospy.get_param("~base_link_frame", "base_link")
 
@@ -41,7 +41,10 @@ class PurePursuitTargetSelector(object):
         self.curv_window_m = float(rospy.get_param("~curv_window_m", 0.8))
 
         self.publish_ackermann = bool(rospy.get_param("~publish_ackermann", True))
-        self.ack_topic = rospy.get_param("~ackermann_topic", "/pure_pursuit/drive")
+        self.ack_topic = rospy.get_param("~ackermann_topic", "/control/ackermann_cmd_mux/input/navigation")
+        self.delta_topic = rospy.get_param("~delta_topic", "/planning/pure_pursuit/delta")
+        self.kappa_topic = rospy.get_param("~kappa_topic", "/planning/pure_pursuit/kappa")
+        self.ld_topic = rospy.get_param("~ld_topic", "/planning/pure_pursuit/lookahead_distance")
         self.publish_markers = bool(rospy.get_param("~publish_markers", True))
 
         # State
@@ -59,9 +62,9 @@ class PurePursuitTargetSelector(object):
 
         self.pub_target_odom = rospy.Publisher("~target_point_odom", PointStamped, queue_size=1)
         self.pub_target_bl   = rospy.Publisher("~target_point_base_link", PointStamped, queue_size=1)
-        self.pub_ld          = rospy.Publisher("~Ld", Float64, queue_size=1)
-        self.pub_delta       = rospy.Publisher("~delta", Float64, queue_size=1)
-        self.pub_kappa       = rospy.Publisher("~kappa", Float64, queue_size=1)
+        self.pub_ld          = rospy.Publisher(self.ld_topic, Float64, queue_size=1)
+        self.pub_delta       = rospy.Publisher(self.delta_topic, Float64, queue_size=1)
+        self.pub_kappa       = rospy.Publisher(self.kappa_topic, Float64, queue_size=1)
         self.pub_marker      = rospy.Publisher("~markers", Marker, queue_size=1)
         self.pub_ack         = rospy.Publisher(self.ack_topic, AckermannDriveStamped, queue_size=1) if self.publish_ackermann else None
 
@@ -97,7 +100,7 @@ class PurePursuitTargetSelector(object):
 
     def _project_on_path(self, p):
         """ Proyección de p sobre el segmento más cercano [p_i, p_{i+1}] para obtener s0 (arclength). """
-        best = (float('inf'), 0, 0.0, pts_to_point(self.path_pts[0]))  # (dist, idx_i, t, proj_pt)
+        best = (float('inf'), 0, 0.0, self.path_pts[0])  # (dist, idx_i, t, proj_pt)
         for i in range(len(self.path_pts)-1):
             a = self.path_pts[i]
             b = self.path_pts[i+1]
@@ -115,6 +118,29 @@ class PurePursuitTargetSelector(object):
         _, i, t, proj = best
         s0 = self.s_cum[i] + t * (_norm2(_sub(self.path_pts[i+1], self.path_pts[i])))
         return s0, proj, i, t
+
+    def _publish_points(self, ps_odom, ps_base_link):
+        self.pub_target_odom.publish(ps_odom)
+        self.pub_target_bl.publish(ps_base_link)
+
+    def _publish_marker_target(self, ps_odom):
+        m = Marker()
+        m.header = ps_odom.header
+        m.ns = "pure_pursuit_target"
+        m.id = 0
+        m.type = Marker.SPHERE
+        m.action = Marker.ADD
+        m.pose.position = ps_odom.point
+        m.pose.orientation.w = 1.0
+        m.scale.x = 0.20
+        m.scale.y = 0.20
+        m.scale.z = 0.20
+        m.color.r = 1.0
+        m.color.g = 0.2
+        m.color.b = 0.2
+        m.color.a = 1.0
+        m.lifetime = rospy.Duration(0.25)
+        self.pub_marker.publish(m)
 
     def _interp_at_s(self, s_star):
         """ p* = p_j + λ (p_{j+1}-p_j) con s_j <= s* < s_{j+1}. """

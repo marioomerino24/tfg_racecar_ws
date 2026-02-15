@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+build/
+devel/
+*.log
+
+# IDE/local metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+.cproject
+.project
+.pydevproject
+.settings/

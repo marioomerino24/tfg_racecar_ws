@@ -26,31 +26,31 @@ class TrackViz(object):
         self.life_time = float(p("~lifetime", 0.15))     # tiempo de vida de markers (s)
 
         # ====================== Tópicos de IO ======================
-        # Entradas (detección + emparejado)
-        self.topic_cones      = p("~topic/cones",      "/cones/raw")        # ConeArray (detección)
-        self.topic_pairs      = p("~topic/pairs",      "/cones/pairs")  # ConePairArray (lr_pairing_mst)
-        self.topic_midpoints  = p("~topic/midpoints",  "/track/midpoints")
-        self.topic_centerline = p("~topic/centerline", "/track/centerline")
+        # Entradas de percepción/estimación vigentes
+        self.topic_cones      = p("~topic/cones",      "/perception/lidar/cones")
+        self.topic_pairs      = p("~topic/pairs",      "/deprecated/lr_pairs")
+        self.topic_midpoints  = p("~topic/midpoints",  "/estimation/track/midpoints")
+        self.topic_centerline = p("~topic/centerline", "/estimation/track/centerline")
 
         # Entradas nuevas desde nodos posteriores (centerline, borders, etc.)
         self.topic_ctr_path_in = p("~topic/centerline_path_in",
-                                   "/track/centerline_path_opt")
+                                   "/planning/track/centerline_path")
         self.topic_left_path   = p("~topic/left_path",
-                                   "/track/left_path_opt")
+                                   "/planning/track/left_boundary_path")
         self.topic_right_path  = p("~topic/right_path",
-                                   "/track/right_path_opt")
+                                   "/planning/track/right_boundary_path")
 
         # Salidas (relativos al nombre del nodo)
         self.topic_markers = p("~topic/markers", "markers")
 
         # Mantengo compatibilidad con tu antiguo parámetro ~topic/centerline_path
-        topic_ctr_path_legacy = p("~topic/centerline_path", "centerline_path")
+        topic_ctr_path_legacy = p("~topic/centerline_path", "/planning/track/centerline_path")
         self.topic_ctr_path_out = p("~topic/centerline_path_out",
                                     topic_ctr_path_legacy)
 
         # ====================== Flags de activación ======================
         self.enable_cones           = bool(p("~enable/cones",           True))
-        self.enable_pairs           = bool(p("~enable/pairs",           True))
+        self.enable_pairs           = bool(p("~enable/pairs",           False))
         self.enable_midpoints       = bool(p("~enable/midpoints",       True))
         self.enable_centerline      = bool(p("~enable/centerline",      False))  # legacy
         self.enable_centerline_path = bool(p("~enable/centerline_path", True))   # salida Path
@@ -122,7 +122,8 @@ class TrackViz(object):
 
         # Subs
         rospy.Subscriber(self.topic_cones,      ConeArray,     self._cb_cones, queue_size=1)
-        rospy.Subscriber(self.topic_pairs,      ConePairArray, self._cb_pairs, queue_size=1)
+        if self.enable_pairs:
+            rospy.Subscriber(self.topic_pairs, ConePairArray, self._cb_pairs, queue_size=1)
         rospy.Subscriber(self.topic_midpoints,  MidpointArray, self._cb_mid,   queue_size=1)
         rospy.Subscriber(self.topic_centerline, Centerline,    self._cb_ctr,   queue_size=1)
 
@@ -160,36 +161,20 @@ class TrackViz(object):
         ns  = self.ns
         uid = 0
 
-        # ---------- Conos L/R (basado en ConePairArray) ----------
-        if self.enable_cones and self.msg_pairs is not None and self.msg_pairs.pairs:
-            pts_L, pts_R = [], []
+        # ---------- Conos detectados (ConeArray) ----------
+        if self.enable_cones and self.msg_cones is not None and self.msg_cones.cones:
+            pts_cones = []
+            for c in self.msg_cones.cones:
+                if hasattr(c, "p"):
+                    pts_cones.append(Point(c.p.x, c.p.y, 0.0))
 
-            for pair in self.msg_pairs.pairs:
-                # LEFT
-                if hasattr(pair.left, "p"):
-                    Lp = pair.left.p
-                    pts_L.append(Point(Lp.x, Lp.y, 0.0))
-                # RIGHT
-                if hasattr(pair.right, "p"):
-                    Rp = pair.right.p
-                    pts_R.append(Point(Rp.x, Rp.y, 0.0))
-
-            if pts_L:
-                m = Marker(header=hdr, ns=ns+"/cones_left", id=uid,
-                           type=Marker.SPHERE_LIST, action=Marker.ADD)
-                m.scale.x = m.scale.y = m.scale.z = self.scale_cone
-                m.color = self.c_left
-                m.lifetime = rospy.Duration(self.life_time)
-                m.points = pts_L
-                ma.markers.append(m); uid += 1
-
-            if pts_R:
-                m = Marker(header=hdr, ns=ns+"/cones_right", id=uid,
+            if pts_cones:
+                m = Marker(header=hdr, ns=ns+"/cones", id=uid,
                            type=Marker.SPHERE_LIST, action=Marker.ADD)
                 m.scale.x = m.scale.y = m.scale.z = self.scale_cone
                 m.color = self.c_right
                 m.lifetime = rospy.Duration(self.life_time)
-                m.points = pts_R
+                m.points = pts_cones
                 ma.markers.append(m); uid += 1
 
         # ---------- Índice original de cada cono (ConeArray) ----------
@@ -245,7 +230,7 @@ class TrackViz(object):
                 Lp = pair.left.p
                 Rp = pair.right.p
 
-                # En lr_pairing_mst asignamos left.id/right.id = idx de pareja (1..N).
+                # En modo legacy con pares, left.id/right.id suele codificar el indice de pareja.
                 idx_label = getattr(pair.left, "id", i + 1)
                 num_str   = str(idx_label)
 

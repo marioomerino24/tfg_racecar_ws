@@ -1,2 +1,0 @@
-racecar_ackermann_mux:racecar_cone_detection_lidar:racecar_cone_msgs:racecar_description:racecar_pure_pursuit:racecar_pure_pursuit_control:racecar_sim_control:racecar_sim_gazebo:racecar_track_geometry
--DCATKIN_DEVEL_PREFIX=/ws/devel -DCMAKE_INSTALL_PREFIX=/ws/install -G Unix Makefiles

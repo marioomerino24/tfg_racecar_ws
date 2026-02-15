@@ -6,29 +6,27 @@ lifetime: 0.15          # Tiempo de vida de los markers (segundos)
 
 # ==================== Tópicos de entrada/salida ====================
 topic:
-  # OJO: este debe ser el topic donde se publica el ConeArray bruto.
-  # Si tu ScanToCones publica en /cones/raw, pon aquí "/cones/raw".
-  cones:      "/cones"              # <-- cámbialo a "/cones/raw" si corresponde
-  pairs:      "/cones/pairs"
-  midpoints:  "/track/midpoints"
-  centerline: "/track/centerline"
+  cones:      "/perception/lidar/cones"
+  pairs:      "/deprecated/lr_pairs"
+  midpoints:  "/estimation/track/midpoints"
+  centerline: "/estimation/track/centerline"
 
   # Entradas nuevas (nodos posteriores: centerline y bordes optimizados)
-  centerline_path_in: "/track/centerline_path_opt"
-  left_path:          "/track/left_path_opt"
-  right_path:         "/track/right_path_opt"
+  centerline_path_in: "/planning/track/centerline_path"
+  left_path:          "/planning/track/left_boundary_path"
+  right_path:         "/planning/track/right_boundary_path"
 
-  # Salida (relativos: -> /track_viz/markers, /track_viz/centerline_path)
+  # Salidas de visualización/publicación
   markers:          "markers"
-  centerline_path:  "centerline_path"
+  centerline_path:  "/planning/track/centerline_path"
 
 # ==================== Flags de activación ====================
 enable:
-  cones:               true    # dibujar conos L/R
-  pairs:               true    # dibujar pares (segmentos + anillos + texto)
+  cones:               true    # dibujar conos detectados
+  pairs:               false   # legado LR pairing (desactivado)
   midpoints:           true    # dibujar midpoints
   centerline:          true    # dibujar centerline (línea + cruces, legacy)
-  centerline_path:     true    # republicar nav_msgs/Path
+  centerline_path:     false   # no republicar; el Path lo publica centerline_to_path
 
   # Flags para nodos posteriores
   centerline_path_in:  true    # visualizar Path de centerline entrante

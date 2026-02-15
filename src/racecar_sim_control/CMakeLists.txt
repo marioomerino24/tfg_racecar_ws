@@ -16,11 +16,6 @@ catkin_package()
 
 catkin_install_python(
   PROGRAMS
-    scripts/keyboard_teleop.py
     scripts/servo_commands.py
-    scripts/keyboard_teleop2.py
-    scripts/teleop_debug.py
-    scripts/teleop_fix_path.py
-    scripts/teleop_debug_fix.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

@@ -1,4 +1,4 @@
-output: "/ackermann_cmd"
+output: "/control/ackermann_cmd"
 rate_hz: 50.0
 idle_publish_stop: true    # publica stop si ninguna fuente está viva
 
@@ -10,13 +10,13 @@ topics:
     shortcircuit: true
 
   - name: "teleop"
-    topic: "/vesc/ackermann_cmd_mux/input/teleop"
+    topic: "/control/ackermann_cmd_mux/input/teleop"
     timeout: 0.50
     priority: 50
     shortcircuit: false
 
   - name: "navigation"
-    topic: "/navigation/ackermann_cmd"
+    topic: "/control/ackermann_cmd_mux/input/navigation"
     timeout: 0.50
     priority: 10
     shortcircuit: false

@@ -9,9 +9,15 @@ from racecar_cone_msgs.msg import ConeArray, Cone
 
 class ConeErrorEvaluator(object):
     def __init__(self):
-        # Parámetros (por si quieres cambiarlos por rosparam más adelante)
-        self.raw_topic   = rospy.get_param("~raw_topic", "/cones/raw")
-        self.gt_topic    = rospy.get_param("~gt_topic", "/track/cones_zigzag_cones")
+        # Parametros con esquema nuevo y fallback
+        self.raw_topic = rospy.get_param(
+            "~input/raw_topic",
+            rospy.get_param("~raw_topic", "/perception/lidar/cones")
+        )
+        self.gt_topic = rospy.get_param(
+            "~input/gt_topic",
+            rospy.get_param("~gt_topic", "/ground_truth/track/cones")
+        )
         self.min_gt_src  = rospy.get_param("~gt_source", "spawn")  # fuente "real" preferida
         self.eps_rel     = rospy.get_param("~eps_rel", 1e-6)
 
@@ -155,7 +161,7 @@ class ConeErrorEvaluator(object):
 
 
 def main():
-    rospy.init_node("cone_error_evaluator", anonymous=True)
+    rospy.init_node("cone_error_evaluator")
     node = ConeErrorEvaluator()
     rospy.spin()
 

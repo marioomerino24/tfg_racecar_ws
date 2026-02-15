@@ -1,0 +1,60 @@
+<launch>
+  <!--
+    Pipeline real (hardware) basado en el flujo de Alba:
+    - bringup fisico (vesc + mux + sensores + tf estaticas)
+    - deteccion de conos
+    - estimacion de pista (midpoints + centerline)
+    - control (pure pursuit + longitudinal)
+  -->
+  <arg name="racecar_version" default="racecar-v2"/>
+  <arg name="run_camera" default="false"/>
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="laser_frame" default="laser"/>
+  <arg name="out_frame" default="odom"/>
+  <arg name="resample_ds" default="0.25"/>
+  <arg name="enable_cone_detection" default="true"/>
+  <arg name="enable_track_estimation" default="true"/>
+  <arg name="enable_pure_pursuit" default="true"/>
+  <arg name="enable_pure_pursuit_control" default="true"/>
+  <arg name="enable_track_visualization" default="true"/>
+  <arg name="pure_pursuit_config" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
+  <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control_real.yaml"/>
+  <arg name="centerline_config" default="$(find racecar_track_geometry)/config/centerline.yaml"/>
+  <arg name="track_viz_config" default="$(find racecar_track_geometry)/config/track_viz.yaml"/>
+
+  <!-- Bringup fisico (mismo patron que tfg_alba_ws) -->
+  <include file="$(find racecar)/launch/includes/$(arg racecar_version)-teleop.launch.xml">
+    <arg name="racecar_version" value="$(arg racecar_version)"/>
+    <arg name="run_camera" value="$(arg run_camera)"/>
+  </include>
+
+  <group if="$(arg enable_cone_detection)">
+    <include file="$(find racecar_cone_detection_lidar)/launch/core/cone_detection.launch">
+      <arg name="scan_topic" value="$(arg scan_topic)"/>
+      <arg name="laser_frame" value="$(arg laser_frame)"/>
+      <arg name="out_frame" value="$(arg out_frame)"/>
+    </include>
+  </group>
+
+  <group if="$(arg enable_track_estimation)">
+    <include file="$(find racecar_track_geometry)/launch/core/track_estimation.launch">
+      <arg name="enable_visualization" value="$(arg enable_track_visualization)"/>
+      <arg name="centerline_config" value="$(arg centerline_config)"/>
+      <arg name="track_viz_config" value="$(arg track_viz_config)"/>
+    </include>
+    <param name="centerline_fit/resample_ds" value="$(arg resample_ds)"/>
+  </group>
+
+  <group if="$(arg enable_pure_pursuit)">
+    <include file="$(find racecar_pure_pursuit)/launch/core/target_selector.launch">
+      <arg name="config" value="$(arg pure_pursuit_config)"/>
+    </include>
+  </group>
+
+  <group if="$(arg enable_pure_pursuit_control)">
+    <include file="$(find racecar_pure_pursuit_control)/launch/core/controller.launch">
+      <arg name="config" value="$(arg pure_pursuit_control_config)"/>
+    </include>
+  </group>
+
+</launch>

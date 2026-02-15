@@ -1,0 +1,52 @@
+<launch>
+  <arg name="world_name" default="racecar"/>
+  <arg name="gui" default="true"/>
+  <arg name="enable_rviz" default="true"/>
+  <arg name="resample_ds" default="0.25"/>
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="laser_frame" default="laser"/>
+  <arg name="out_frame" default="odom"/>
+  <arg name="enable_odom_tf" default="true"/>
+  <arg name="odom_topic" default="/vesc/odom"/>
+  <arg name="odom_frame" default="odom"/>
+  <arg name="base_frame" default="base_link"/>
+  <arg name="midpoints_debug_level" default="summary"/>
+  <arg name="midpoints_debug_report_every_n" default="1"/>
+  <arg name="midpoints_debug_console_enable" default="true"/>
+  <arg name="enable_pure_pursuit" default="true"/>
+  <arg name="enable_pure_pursuit_control" default="true"/>
+  <arg name="pure_pursuit_config" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
+  <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control.yaml"/>
+
+  <param name="use_sim_time" value="true"/>
+
+  <include file="$(find racecar_sim_gazebo)/launch/scenarios/sim_perception_pipeline.launch">
+    <arg name="world_name" value="$(arg world_name)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="scan_topic" value="$(arg scan_topic)"/>
+    <arg name="laser_frame" value="$(arg laser_frame)"/>
+    <arg name="out_frame" value="$(arg out_frame)"/>
+    <arg name="resample_ds" value="$(arg resample_ds)"/>
+    <arg name="enable_odom_tf" value="$(arg enable_odom_tf)"/>
+    <arg name="odom_topic" value="$(arg odom_topic)"/>
+    <arg name="odom_frame" value="$(arg odom_frame)"/>
+    <arg name="base_frame" value="$(arg base_frame)"/>
+    <arg name="midpoints_debug_level" value="$(arg midpoints_debug_level)"/>
+    <arg name="midpoints_debug_report_every_n" value="$(arg midpoints_debug_report_every_n)"/>
+    <arg name="midpoints_debug_console_enable" value="$(arg midpoints_debug_console_enable)"/>
+    <arg name="enable_rviz" value="$(arg enable_rviz)"/>
+  </include>
+
+  <group if="$(arg enable_pure_pursuit)">
+    <include file="$(find racecar_pure_pursuit)/launch/core/target_selector.launch">
+      <arg name="config" value="$(arg pure_pursuit_config)"/>
+    </include>
+  </group>
+
+  <group if="$(arg enable_pure_pursuit_control)">
+    <include file="$(find racecar_pure_pursuit_control)/launch/core/controller.launch">
+      <arg name="config" value="$(arg pure_pursuit_control_config)"/>
+    </include>
+  </group>
+
+</launch>

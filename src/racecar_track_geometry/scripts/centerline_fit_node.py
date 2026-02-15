@@ -84,24 +84,51 @@ class CenterlineFitNode(object):
     def __init__(self):
         # Parámetro: paso de muestreo en arclength para la salida
         self.ds = rospy.get_param("~resample_ds", 0.25)
+        self.topic_midpoints = rospy.get_param("~topic_midpoints", "/estimation/track/midpoints")
+        self.topic_centerline = rospy.get_param("~topic_centerline", "/estimation/track/centerline")
+        self.topic_metrics = rospy.get_param("~topic_metrics", "/estimation/track/metrics")
+        self.topic_debug = rospy.get_param("~topic_debug", "/estimation/track/centerline/debug")
 
         # Publicadores principales
-        self.pub_centerline = rospy.Publisher("/track/centerline",
+        self.pub_centerline = rospy.Publisher(self.topic_centerline,
                                               Centerline,
                                               queue_size=1)
-        self.pub_metrics = rospy.Publisher("/track/metrics",
+        self.pub_metrics = rospy.Publisher(self.topic_metrics,
                                            TrackMetrics,
                                            queue_size=1)
 
         # Publicador de logs de debug
-        self.pub_debug = rospy.Publisher("/track/centerline_debug",
+        self.pub_debug = rospy.Publisher(self.topic_debug,
                                          String,
                                          queue_size=10)
 
-        rospy.Subscriber("/track/midpoints",
+        rospy.Subscriber(self.topic_midpoints,
                          MidpointArray,
                          self.cb,
                          queue_size=1)
+
+    def _build_linear_samples(self, p0, p1, ds):
+        dx = p1.x - p0.x
+        dy = p1.y - p0.y
+        L = math.hypot(dx, dy)
+        if L < 1e-9:
+            return [Point(p0.x, p0.y, 0.0)], [0.0], [0.0], 0.0
+
+        ux = dx / L
+        uy = dy / L
+        s_out = []
+        q = 0.0
+        while q <= L:
+            s_out.append(q)
+            q += ds
+        if s_out[-1] < L - 1e-6:
+            s_out.append(L)
+
+        pts = []
+        for s in s_out:
+            pts.append(Point(p0.x + ux * s, p0.y + uy * s, 0.0))
+        kappa = [0.0] * len(pts)
+        return pts, s_out, kappa, L
 
     def debug(self, text):
         msg_dbg = String()
@@ -114,87 +141,92 @@ class CenterlineFitNode(object):
         pts = msg.points
         n_in = len(pts)
 
-        if n_in < 3:
-            self.debug("centerline_fit: menos de 3 puntos (%d), no se ajusta spline." % n_in)
+        if n_in < 2:
+            self.debug("centerline_fit: menos de 2 puntos (%d), no se ajusta centerline." % n_in)
             return
 
         self.debug("centerline_fit: recibido MidpointArray con %d puntos" % n_in)
 
-        # 1) Parametrización por arclength de los midpoints originales
-        s_nodes = cum_arclength(pts)
-        L = s_nodes[-1]
-        if L < 1e-6:
-            self.debug("centerline_fit: longitud total L casi cero (%.6f), abortando." % L)
-            return
-
-        self.debug("centerline_fit: longitud total L = %.3f m" % L)
-
-        x_nodes = [p.x for p in pts]
-        y_nodes = [p.y for p in pts]
-
-        # 2) Calcula momentos de spline cúbico natural en X e Y
-        Mx = natural_cubic_spline_1d(s_nodes, x_nodes)
-        My = natural_cubic_spline_1d(s_nodes, y_nodes)
-        self.debug("centerline_fit: calculados momentos Mx, My para spline cúbico natural.")
-
-        # 3) Construye rejilla de muestreo uniforme en arclength
         ds = self.ds
-        s_out = []
-        q = 0.0
-        while q <= L:
-            s_out.append(q)
-            q += ds
-        # asegura incluir exactamente el final
-        if s_out[-1] < L - 1e-6:
-            s_out.append(L)
+        if n_in == 2:
+            samples_out, s_out, kappa, L = self._build_linear_samples(pts[0], pts[1], ds)
+            n_out = len(samples_out)
+            self.debug("centerline_fit: 2 puntos -> ajuste lineal (%d muestras)." % n_out)
+        else:
+            # 1) Parametrización por arclength de los midpoints originales
+            s_nodes = cum_arclength(pts)
+            L = s_nodes[-1]
+            if L < 1e-6:
+                self.debug("centerline_fit: longitud total L casi cero (%.6f), abortando." % L)
+                return
 
-        self.debug("centerline_fit: remuestreando con ds=%.3f -> %d muestras." %
-                   (ds, len(s_out)))
+            self.debug("centerline_fit: longitud total L = %.3f m" % L)
 
-        # 4) Evalúa spline en cada s_out
-        samples_out = []
-        i = 0
-        for q in s_out:
-            # busca intervalo [s_nodes[i], s_nodes[i+1]] que contiene q
-            while i+1 < len(s_nodes) and s_nodes[i+1] < q:
-                i += 1
-            if i+1 >= len(s_nodes):
-                # clamp al último segmento
-                i = len(s_nodes) - 2
+            x_nodes = [p.x for p in pts]
+            y_nodes = [p.y for p in pts]
 
-            xq = eval_spline_seg(s_nodes[i], s_nodes[i+1],
-                                 x_nodes[i], x_nodes[i+1],
-                                 Mx[i], Mx[i+1],
-                                 q)
-            yq = eval_spline_seg(s_nodes[i], s_nodes[i+1],
-                                 y_nodes[i], y_nodes[i+1],
-                                 My[i], My[i+1],
-                                 q)
-            samples_out.append(Point(xq, yq, 0.0))
+            # 2) Calcula momentos de spline cúbico natural en X e Y
+            Mx = natural_cubic_spline_1d(s_nodes, x_nodes)
+            My = natural_cubic_spline_1d(s_nodes, y_nodes)
+            self.debug("centerline_fit: calculados momentos Mx, My para spline cúbico natural.")
 
-        n_out = len(samples_out)
-        self.debug("centerline_fit: spline evaluado. Muestras de salida: %d" % n_out)
+            # 3) Construye rejilla de muestreo uniforme en arclength
+            s_out = []
+            q = 0.0
+            while q <= L:
+                s_out.append(q)
+                q += ds
+            # asegura incluir exactamente el final
+            if s_out[-1] < L - 1e-6:
+                s_out.append(L)
 
-        # 5) Curvatura discreta sobre la trayectoria suavizada
-        kappa = []
-        for i in range(n_out):
-            if i == 0 or i == n_out-1:
-                kappa.append(0.0)
-            else:
-                x1, y1 = samples_out[i-1].x, samples_out[i-1].y
-                x2, y2 = samples_out[i].x,   samples_out[i].y
-                x3, y3 = samples_out[i+1].x, samples_out[i+1].y
+            self.debug("centerline_fit: remuestreando con ds=%.3f -> %d muestras." %
+                       (ds, len(s_out)))
 
-                a = math.hypot(x2-x1, y2-y1)
-                b = math.hypot(x3-x2, y3-y2)
-                c = math.hypot(x3-x1, y3-y1)
+            # 4) Evalúa spline en cada s_out
+            samples_out = []
+            i = 0
+            for q in s_out:
+                # busca intervalo [s_nodes[i], s_nodes[i+1]] que contiene q
+                while i+1 < len(s_nodes) and s_nodes[i+1] < q:
+                    i += 1
+                if i+1 >= len(s_nodes):
+                    # clamp al último segmento
+                    i = len(s_nodes) - 2
 
-                denom = a*b*c
-                if denom < 1e-9:
+                xq = eval_spline_seg(s_nodes[i], s_nodes[i+1],
+                                     x_nodes[i], x_nodes[i+1],
+                                     Mx[i], Mx[i+1],
+                                     q)
+                yq = eval_spline_seg(s_nodes[i], s_nodes[i+1],
+                                     y_nodes[i], y_nodes[i+1],
+                                     My[i], My[i+1],
+                                     q)
+                samples_out.append(Point(xq, yq, 0.0))
+
+            n_out = len(samples_out)
+            self.debug("centerline_fit: spline evaluado. Muestras de salida: %d" % n_out)
+
+            # 5) Curvatura discreta sobre la trayectoria suavizada
+            kappa = []
+            for i in range(n_out):
+                if i == 0 or i == n_out-1:
                     kappa.append(0.0)
                 else:
-                    area = abs((x2-x1)*(y3-y1) - (y2-y1)*(x3-x1)) / 2.0
-                    kappa.append(4.0 * area / denom)
+                    x1, y1 = samples_out[i-1].x, samples_out[i-1].y
+                    x2, y2 = samples_out[i].x,   samples_out[i].y
+                    x3, y3 = samples_out[i+1].x, samples_out[i+1].y
+
+                    a = math.hypot(x2-x1, y2-y1)
+                    b = math.hypot(x3-x2, y3-y2)
+                    c = math.hypot(x3-x1, y3-y1)
+
+                    denom = a*b*c
+                    if denom < 1e-9:
+                        kappa.append(0.0)
+                    else:
+                        area = abs((x2-x1)*(y3-y1) - (y2-y1)*(x3-x1)) / 2.0
+                        kappa.append(4.0 * area / denom)
 
         # 6) Construye Centerline de salida (ya interpolada y uniforme)
         out = Centerline()
@@ -206,7 +238,7 @@ class CenterlineFitNode(object):
         out.ds = ds
 
         self.pub_centerline.publish(out)
-        self.debug("centerline_fit: publicado /track/midline con spline suavizada.")
+        self.debug("centerline_fit: publicado centerline suavizada en %s." % self.topic_centerline)
 
         # 7) Métricas globales (sobre la trayectoria suavizada)
         met = TrackMetrics()
@@ -242,8 +274,9 @@ class CenterlineFitNode(object):
         met.notes = "resample_ds=%.3f, N_in=%d, N_out=%d" % (ds, n_in, n_out)
 
         self.pub_metrics.publish(met)
-        self.debug("centerline_fit: publicado /track/metrics (std_width=%.3f, max_kappa=%.4f)." %
-                   (std_w, met.max_kappa))
+        self.debug("centerline_fit: publicado metrics en %s (std_width=%.3f, max_kappa=%.4f)." %
+                   (self.topic_metrics,
+                    std_w, met.max_kappa))
 
 
 if __name__ == "__main__":

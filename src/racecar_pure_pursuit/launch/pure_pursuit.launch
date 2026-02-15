@@ -1,6 +1,8 @@
 <launch>
   <arg name="use_yaml" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
-  <rosparam file="$(arg use_yaml)" command="load" />
 
-  <node pkg="racecar_pure_pursuit" type="pure_pursuit_target_selector.py" name="pure_pursuit_target_selector" output="screen"/>
+  <!-- Alias de compatibilidad: launch recomendado en core/. -->
+  <include file="$(find racecar_pure_pursuit)/launch/core/target_selector.launch">
+    <arg name="config" value="$(arg use_yaml)"/>
+  </include>
 </launch>

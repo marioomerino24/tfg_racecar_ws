@@ -1,8 +1,0 @@
-prefix=/ws/install
-
-Name: racecar_cone_detection_lidar
-Description: Description of racecar_cone_detection_lidar
-Version: 0.1.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

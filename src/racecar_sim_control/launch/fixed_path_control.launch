@@ -1,75 +1,42 @@
 <launch>
     <arg name="world_name" default="racecar"/>
-    <arg name="gui"        default="true" />
-    <arg name="resample_ds" default="0.25"/> 
-    <arg name="scan_topic"  default="/scan"/>
+    <arg name="gui" default="true"/>
+    <arg name="enable_rviz" default="true"/>
+    <arg name="resample_ds" default="0.25"/>
+    <arg name="scan_topic" default="/scan"/>
     <arg name="laser_frame" default="laser"/>
-    <arg name="out_frame"   default="odom"/> 
-    <param name="use_sim_time" value="true"/>
+    <arg name="out_frame" default="odom"/>
+    <arg name="enable_odom_tf" default="true"/>
+    <arg name="odom_topic" default="/vesc/odom"/>
+    <arg name="odom_frame" default="odom"/>
+    <arg name="base_frame" default="base_link"/>
+    <arg name="midpoints_debug_level" default="summary"/>
+    <arg name="midpoints_debug_report_every_n" default="1"/>
+    <arg name="midpoints_debug_console_enable" default="true"/>
+    <arg name="enable_pure_pursuit" default="true"/>
+    <arg name="enable_pure_pursuit_control" default="true"/>
+    <arg name="pure_pursuit_config" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
+    <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control.yaml"/>
 
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find racecar_sim_gazebo)/worlds/$(arg world_name).world"/>
-        <arg name="gui" value="$(arg gui)"/>
+    <!-- Alias de compatibilidad: launch recomendado en scenarios/. -->
+    <include file="$(find racecar_sim_control)/launch/scenarios/fixed_path_pipeline.launch">
+      <arg name="world_name" value="$(arg world_name)"/>
+      <arg name="gui" value="$(arg gui)"/>
+      <arg name="enable_rviz" value="$(arg enable_rviz)"/>
+      <arg name="resample_ds" value="$(arg resample_ds)"/>
+      <arg name="scan_topic" value="$(arg scan_topic)"/>
+      <arg name="laser_frame" value="$(arg laser_frame)"/>
+      <arg name="out_frame" value="$(arg out_frame)"/>
+      <arg name="enable_odom_tf" value="$(arg enable_odom_tf)"/>
+      <arg name="odom_topic" value="$(arg odom_topic)"/>
+      <arg name="odom_frame" value="$(arg odom_frame)"/>
+      <arg name="base_frame" value="$(arg base_frame)"/>
+      <arg name="midpoints_debug_level" value="$(arg midpoints_debug_level)"/>
+      <arg name="midpoints_debug_report_every_n" value="$(arg midpoints_debug_report_every_n)"/>
+      <arg name="midpoints_debug_console_enable" value="$(arg midpoints_debug_console_enable)"/>
+      <arg name="enable_pure_pursuit" value="$(arg enable_pure_pursuit)"/>
+      <arg name="enable_pure_pursuit_control" value="$(arg enable_pure_pursuit_control)"/>
+      <arg name="pure_pursuit_config" value="$(arg pure_pursuit_config)"/>
+      <arg name="pure_pursuit_control_config" value="$(arg pure_pursuit_control_config)"/>
     </include>
-
-    <!-- Publica la TF odom->base_link a partir de /vesc/odom -->
-    <node pkg="racecar_sim_gazebo" type="odom_to_tf.py" name="odom_to_tf" output="screen">
-        <param name="odom_topic" value="/vesc/odom"/>     <!-- ajusta si tu tópico es otro -->
-        <param name="odom_frame" value="odom"/>
-        <param name="base_frame" value="base_link"/>
-    </node>
-
-    <node pkg="racecar_sim_gazebo" type="spawn_cones_zigzag.py" name="spawn_cones_zigzag" output="screen">
-        <!-- Ancho de pista -->
-        <param name="W" value="3.0" />
-        <!-- Separación aprox. entre parejas de conos (y entre conos del mismo lado) -->
-        <param name="DS" value="1.0" />
-        <!-- Número de semicircunferencias -->
-        <param name="N_arcs" value="8" />
-        <!-- Radio de cada semicircunferencia -->
-        <param name="R_arc" value="4.0" />
-        <!-- Pose inicial de la traza media -->
-        <param name="X0" value="0.0" />
-        <param name="Y0" value="0.0" />
-        <param name="YAW0" value="0.0" />
-        <!-- Limpia conos anteriores con el mismo prefijo -->
-        <param name="clear_existing" value="true" />
-        <param name="prefix" value="cone_zigzag" />
-    </node>
-
-    <!-- === Modelo URDF (xacro) === -->
-    <param name="robot_description"
-        command="$(find xacro)/xacro '$(find racecar_description)/urdf/racecar.xacro'"/>
-
-    <!-- === Spawn del robot en Gazebo === -->
-    <node name="racecar_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-    args="-urdf -param robot_description -model racecar -z 0.05" />
-    <node name="better_odom" pkg="topic_tools" type="relay"
-    args="/vesc/odom /pf/pose/odom" output="screen"/>
-
-    <!-- === TF estático map->odom identidad (opcional pero útil para RViz) === -->
-    <node pkg="tf" type="static_transform_publisher" name="map_to_odom"
-    args="0 0 0 0 0 0 map odom 100"/>
-
-      <!-- convert joint states to TF transforms for rviz, etc -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-    <remap from="/joint_states" to="/racecar/joint_states" />
-  </node>
-    <!-- Allow for Gazebo to broadcast odom -->
-  <node pkg="racecar_sim_gazebo" name="gazebo_odometry_node" type="gazebo_odometry.py"/>
-
-    <!-- === Detección desde Hokuyo (/scan) → /cones/raw === -->
-    <include file="$(find racecar_cone_detection_lidar)/launch/scan_to_cones.launch">
-    <!-- Si quieres afinar, puedes pasar más args (eps0, eps_k, w_min, w_max, etc.) -->
-    </include>
-
-    <!-- === Geometría de pista: L–R pairing, midpoints, centerline, viz === -->
-    <include file="$(find racecar_track_geometry)/launch/track_geometry.launch"/>
-
-        <!-- (Opcional) Forzar ds del resampler por parámetro privado -->
-        <param name="centerline_resampler/resample_ds" value="$(arg resample_ds)"/>
-
-
-    <node pkg="rviz" type="rviz" name="rviz"
-        args="-d $(find racecar_track_geometry)/rviz/cone_perception.rviz" />
 </launch>

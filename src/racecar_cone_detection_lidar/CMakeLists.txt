@@ -15,8 +15,9 @@ catkin_package()
 
 catkin_install_python(
   PROGRAMS
+    scripts/cone_detector_node.py
+    scripts/error_evaluator_node.py
     scripts/scan_to_cones.py
-    scripts/cones_debug_viewer.py
     scripts/cone_error_evaluator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

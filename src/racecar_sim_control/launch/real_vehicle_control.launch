@@ -1,0 +1,4 @@
+<launch>
+  <!-- Alias de compatibilidad: launch recomendado en scenarios/. -->
+  <include file="$(find racecar_sim_control)/launch/scenarios/real_vehicle_pipeline.launch"/>
+</launch>

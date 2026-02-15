@@ -1,8 +1,0 @@
-file(REMOVE_RECURSE
-  "CMakeFiles/_racecar_cone_msgs_generate_messages_check_deps_ConePair"
-)
-
-# Per-language clean rules from dependency scanning.
-foreach(lang )
-  include(CMakeFiles/_racecar_cone_msgs_generate_messages_check_deps_ConePair.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()

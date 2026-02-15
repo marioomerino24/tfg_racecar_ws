@@ -22,7 +22,7 @@ class AckermannMux(object):
         ns = "~"
 
         # Parámetros básicos
-        self.output_topic = rospy.get_param(ns + "output", "/ackermann_cmd")
+        self.output_topic = rospy.get_param(ns + "output", "/control/ackermann_cmd")
         self.rate_hz = float(rospy.get_param(ns + "rate_hz", 50.0))
         self.idle_publish_stop = bool(rospy.get_param(ns + "idle_publish_stop", True))
 

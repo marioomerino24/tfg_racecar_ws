@@ -124,12 +124,12 @@ def main():
     # --- Publicación de la traza media para el nodo de set_model_state ---
     centerline_ds     = float(rospy.get_param("~centerline_ds", 0.1))   # resolución [m] a lo largo de la traza
     centerline_topic  = rospy.get_param("~centerline_topic",
-                                        "/track/centerline_zigzag")     # topic para nav_msgs/Path
+                                        "/ground_truth/track/centerline")     # topic para nav_msgs/Path
     frame_id          = rospy.get_param("~frame_id", "world")
 
     # Topic para publicar el ConeArray
     cones_topic       = rospy.get_param("~cones_topic",
-                                        "/track/cones_zigzag_cones")
+                                        "/ground_truth/track/cones")
 
     # Publisher de la traza (latched para que nuevos subscritores reciban automáticamente)
     centerline_pub = rospy.Publisher(centerline_topic, Path,

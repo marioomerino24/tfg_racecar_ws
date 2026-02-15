@@ -23,10 +23,19 @@ def dist2(p, q):
 
 class ScanToCones(object):
     def __init__(self):
-        # Params
-        self.scan_topic  = rospy.get_param("~scan_topic", "/scan")
-        self.laser_frame = rospy.get_param("~laser_frame", "laser")
-        self.out_frame   = rospy.get_param("~out_frame", "odom")
+        # Params (nuevo esquema con fallback al esquema histórico)
+        self.scan_topic = rospy.get_param(
+            "~input/scan_topic",
+            rospy.get_param("~scan_topic", "/scan")
+        )
+        self.laser_frame = rospy.get_param(
+            "~input/laser_frame",
+            rospy.get_param("~laser_frame", "laser")
+        )
+        self.out_frame = rospy.get_param(
+            "~output/frame",
+            rospy.get_param("~out_frame", "odom")
+        )
 
         # --- Rango útil del láser ---
         self.r_min = float(rospy.get_param("~r_min", 0.35))   # antes 0.20
@@ -59,12 +68,27 @@ class ScanToCones(object):
         self.tflis = tf2_ros.TransformListener(self.tfbuf)
 
         # IO
-        self.pub_cones = rospy.Publisher("/cones/raw", ConeArray, queue_size=10)
-        self.pub_mk    = rospy.Publisher("/cones/markers_raw", MarkerArray, queue_size=10) if self.pub_markers else None
+        self.cones_topic = rospy.get_param(
+            "~output/cones_topic",
+            "/perception/lidar/cones"
+        )
+        self.markers_topic = rospy.get_param(
+            "~output/markers_topic",
+            "/perception/lidar/cones/markers"
+        )
+        self.debug_topic = rospy.get_param(
+            "~debug/serial_topic",
+            "/perception/lidar/cones/debug"
+        )
+
+        self.pub_cones = rospy.Publisher(self.cones_topic, ConeArray, queue_size=10)
+        self.pub_mk = rospy.Publisher(
+            self.markers_topic, MarkerArray, queue_size=10
+        ) if self.pub_markers else None
         self.sub_scan  = rospy.Subscriber(self.scan_topic, LaserScan, self.cb_scan, queue_size=5)
 
         # Publisher exclusivo para el “serial” de conos
-        self.pub_debug = rospy.Publisher("/cones/debug_serial", String, queue_size=10)
+        self.pub_debug = rospy.Publisher(self.debug_topic, String, queue_size=10)
 
     # ============================================================
     # Utilidades
@@ -551,7 +575,7 @@ class ScanToCones(object):
                 markers.markers.append(mt)
 
         # ---- [5] ConeArray final ----
-        debug_lines.append("[5] ConeArray publicado en /cones/raw:")
+        debug_lines.append("[5] ConeArray publicado en %s:" % self.cones_topic)
         debug_lines.append("    n_cones=%d" % len(cones))
         for idx, c in enumerate(cones):
             debug_lines.append(
@@ -578,7 +602,7 @@ class ScanToCones(object):
 
 
 def main():
-    rospy.init_node("scan_to_cones")
+    rospy.init_node("cone_detector")
     ScanToCones()
     rospy.spin()
 

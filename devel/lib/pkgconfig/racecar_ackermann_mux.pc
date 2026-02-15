@@ -1,8 +1,0 @@
-prefix=/ws/devel
-
-Name: racecar_ackermann_mux
-Description: Description of racecar_ackermann_mux
-Version: 0.1.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

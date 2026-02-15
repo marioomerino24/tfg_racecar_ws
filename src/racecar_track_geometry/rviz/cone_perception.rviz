@@ -127,7 +127,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /cones/markers_raw
+      Marker Topic: /perception/lidar/cones/markers
       Name: MarkerArray
       Namespaces:
         cones_raw: true
@@ -138,13 +138,13 @@ Visualization Manager:
       Marker Topic: /markers
       Name: MarkerArray
       Namespaces:
-        track/centerline: true
+        track/centerline_legacy: true
+        track/centerline_nodes_legacy: true
+        track/centerline_path: true
         track/centerline_nodes: true
+        track/cones: true
+        track/cones_idx: true
         track/midpoints: true
-        track/pair_ring_left: true
-        track/pair_ring_right: true
-        track/pair_text: true
-        track/pairs_segments: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -167,7 +167,7 @@ Visualization Manager:
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /centerline_path
+      Topic: /planning/track/centerline_path
       Unreliable: false
       Value: true
   Enabled: true

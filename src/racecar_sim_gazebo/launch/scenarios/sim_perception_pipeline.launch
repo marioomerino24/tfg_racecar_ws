@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ===================== Simulation ===================== -->
+  <arg name="world_name" default="racecar"/>
+  <arg name="gui" default="true"/>
+  <arg name="use_sim_time" default="true"/>
+
+  <!-- ===================== Perception ===================== -->
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="laser_frame" default="laser"/>
+  <arg name="out_frame" default="odom"/>
+  <arg name="resample_ds" default="0.25"/>
+  <arg name="enable_cone_detection" default="true"/>
+  <arg name="enable_track_estimation" default="true"/>
+  <!-- Parametros de midpoints relajados para aumentar bins reales en pista zigzag -->
+  <arg name="midpoints_width_min" default="2.2"/>
+  <arg name="midpoints_width_max" default="3.8"/>
+  <arg name="midpoints_track_width" default="3.5"/>
+  <arg name="midpoints_forward_length_limit" default="6.0"/>
+  <arg name="midpoints_ds_bin" default="0.5"/>
+  <arg name="midpoints_boundary_interp_max_gap_bins" default="1"/>
+  <arg name="midpoints_boundary_smooth_window_bins" default="3"/>
+  <arg name="midpoints_boundary_inference_s_max" default="2.0"/>
+  <arg name="midpoints_enable_curvature_depth_limit" default="true"/>
+  <arg name="midpoints_curvature_depth_kappa_low" default="0.05"/>
+  <arg name="midpoints_curvature_depth_kappa_high" default="0.18"/>
+  <arg name="midpoints_curvature_depth_min" default="1.2"/>
+  <arg name="midpoints_curvature_depth_max" default="4.0"/>
+  <arg name="midpoints_curvature_depth_alpha" default="0.55"/>
+  <arg name="midpoints_debug_level" default="summary"/>
+  <arg name="midpoints_debug_report_every_n" default="1"/>
+  <arg name="midpoints_debug_console_enable" default="true"/>
+  <arg name="enable_odom_tf" default="true"/>
+  <arg name="odom_topic" default="/vesc/odom"/>
+  <arg name="odom_frame" default="odom"/>
+  <arg name="base_frame" default="base_link"/>
+
+  <!-- ===================== Scenario cones ================= -->
+  <arg name="enable_cone_spawn" default="true"/>
+  <arg name="W" default="3.0"/>
+  <arg name="DS" default="1.0"/>
+  <arg name="N_arcs" default="8"/>
+  <arg name="R_arc" default="4.0"/>
+  <arg name="X0" default="0.0"/>
+  <arg name="Y0" default="0.0"/>
+  <arg name="YAW0" default="0.0"/>
+  <arg name="clear_existing" default="true"/>
+  <arg name="prefix" default="cone_zigzag"/>
+
+  <!-- ===================== Visualization ================== -->
+  <arg name="enable_rviz" default="true"/>
+  <arg name="rviz_config" default="$(find racecar_track_geometry)/rviz/cone_perception.rviz"/>
+
+  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find racecar_sim_gazebo)/worlds/$(arg world_name).world"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+  <group if="$(arg enable_cone_spawn)">
+    <node pkg="racecar_sim_gazebo" type="spawn_cones_zigzag.py" name="spawn_cones_zigzag" output="screen">
+      <param name="W" value="$(arg W)"/>
+      <param name="DS" value="$(arg DS)"/>
+      <param name="N_arcs" value="$(arg N_arcs)"/>
+      <param name="R_arc" value="$(arg R_arc)"/>
+      <param name="X0" value="$(arg X0)"/>
+      <param name="Y0" value="$(arg Y0)"/>
+      <param name="YAW0" value="$(arg YAW0)"/>
+      <param name="clear_existing" value="$(arg clear_existing)"/>
+      <param name="prefix" value="$(arg prefix)"/>
+    </node>
+  </group>
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find racecar_description)/urdf/racecar.xacro'"/>
+
+  <node name="racecar_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param robot_description -model racecar -z 0.05"/>
+
+  <include file="$(find racecar_sim_control)/launch/bringup/low_level_control.launch" ns="/"/>
+  <include file="$(find racecar_ackermann_mux)/launch/core/ackermann_mux.launch" ns="vesc"/>
+
+  <node name="better_odom" pkg="topic_tools" type="relay"
+        args="/vesc/odom /pf/pose/odom" output="screen"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom"
+        args="0 0 0 0 0 0 map odom 100"/>
+
+  <group if="$(arg enable_odom_tf)">
+    <node pkg="racecar_sim_gazebo"
+          type="odom_to_tf.py"
+          name="odom_to_tf"
+          output="screen">
+      <param name="odom_topic" value="$(arg odom_topic)"/>
+      <param name="odom_frame" value="$(arg odom_frame)"/>
+      <param name="base_frame" value="$(arg base_frame)"/>
+    </node>
+  </group>
+
+  <group if="$(arg enable_cone_detection)">
+    <include file="$(find racecar_cone_detection_lidar)/launch/core/cone_detection.launch">
+      <arg name="scan_topic" value="$(arg scan_topic)"/>
+      <arg name="laser_frame" value="$(arg laser_frame)"/>
+      <arg name="out_frame" value="$(arg out_frame)"/>
+    </include>
+  </group>
+
+  <group if="$(arg enable_track_estimation)">
+    <include file="$(find racecar_track_geometry)/launch/core/track_estimation.launch">
+      <!-- Ajuste de midpoints alineado con la geometria real de la pista generada -->
+      <arg name="midpoints_fallback_width" value="$(arg W)"/>
+      <arg name="midpoints_width_min" value="$(arg midpoints_width_min)"/>
+      <arg name="midpoints_width_max" value="$(arg midpoints_width_max)"/>
+      <arg name="midpoints_track_width" value="$(arg midpoints_track_width)"/>
+      <arg name="midpoints_forward_length_limit" value="$(arg midpoints_forward_length_limit)"/>
+      <arg name="midpoints_ds_bin" value="$(arg midpoints_ds_bin)"/>
+      <arg name="midpoints_boundary_interp_max_gap_bins" value="$(arg midpoints_boundary_interp_max_gap_bins)"/>
+      <arg name="midpoints_boundary_smooth_window_bins" value="$(arg midpoints_boundary_smooth_window_bins)"/>
+      <arg name="midpoints_boundary_inference_s_max" value="$(arg midpoints_boundary_inference_s_max)"/>
+      <arg name="midpoints_enable_curvature_depth_limit" value="$(arg midpoints_enable_curvature_depth_limit)"/>
+      <arg name="midpoints_curvature_depth_kappa_low" value="$(arg midpoints_curvature_depth_kappa_low)"/>
+      <arg name="midpoints_curvature_depth_kappa_high" value="$(arg midpoints_curvature_depth_kappa_high)"/>
+      <arg name="midpoints_curvature_depth_min" value="$(arg midpoints_curvature_depth_min)"/>
+      <arg name="midpoints_curvature_depth_max" value="$(arg midpoints_curvature_depth_max)"/>
+      <arg name="midpoints_curvature_depth_alpha" value="$(arg midpoints_curvature_depth_alpha)"/>
+      <arg name="midpoints_debug_level" value="$(arg midpoints_debug_level)"/>
+      <arg name="midpoints_debug_report_every_n" value="$(arg midpoints_debug_report_every_n)"/>
+      <arg name="midpoints_debug_console_enable" value="$(arg midpoints_debug_console_enable)"/>
+    </include>
+    <param name="centerline_fit/resample_ds" value="$(arg resample_ds)"/>
+  </group>
+
+  <group if="$(arg enable_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_config)"/>
+  </group>
+</launch>

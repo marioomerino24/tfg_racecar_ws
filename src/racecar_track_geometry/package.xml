@@ -2,7 +2,7 @@
 <package format="2">
   <name>racecar_track_geometry</name>
   <version>0.1.0</version>
-  <description>Emparejado L–R, generación de midline y métricas.</description>
+  <description>Estimación geométrica de pista a partir de conos detectados (midpoints, centerline y métricas).</description>
   <maintainer email="mario@example.com">Mario</maintainer>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
@@ -10,6 +10,7 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>tf</depend>
   <depend>racecar_cone_msgs</depend>
   <export/>

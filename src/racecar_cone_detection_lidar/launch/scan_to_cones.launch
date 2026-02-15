@@ -1,8 +1,0 @@
-<launch>
-
-  <rosparam command="load" file="$(find racecar_cone_detection_lidar)/config/detector.yaml"/>
-
-  <node pkg="racecar_cone_detection_lidar" type="scan_to_cones.py" name="scan_to_cones" output="screen"/>
-
-
-</launch>

@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="enable_visualization" default="true"/>
+  <arg name="enable_centerline_to_path" default="true"/>
+  <arg name="centerline_config" default="$(find racecar_track_geometry)/config/centerline.yaml"/>
+  <arg name="track_viz_config" default="$(find racecar_track_geometry)/config/track_viz.yaml"/>
+  <arg name="centerline_topic" default="/estimation/track/centerline"/>
+  <arg name="centerline_path_topic" default="/planning/track/centerline_path"/>
+  <arg name="centerline_path_set_orientation" default="true"/>
+  <!-- Calibracion de binning segun pista zigzag (DS~1.0 m) -->
+  <arg name="midpoints_s_min" default="-0.3"/>
+  <arg name="midpoints_s_max" default="8.0"/>
+  <arg name="midpoints_ds_bin" default="0.5"/>
+  <arg name="midpoints_min_per_side" default="1"/>
+  <arg name="midpoints_enable_latching" default="true"/>
+  <arg name="midpoints_min_points_to_latch" default="3"/>
+  <arg name="midpoints_min_mean_confidence_to_latch" default="0.25"/>
+  <arg name="midpoints_min_score_to_latch" default="0.8"/>
+  <arg name="midpoints_replace_if_score_improves_ratio" default="1.35"/>
+  <arg name="midpoints_replace_if_score_not_worse_ratio" default="0.90"/>
+  <arg name="midpoints_max_update_rate_hz" default="5.0"/>
+  <arg name="midpoints_max_hold_seconds" default="0.4"/>
+  <arg name="midpoints_enable_forward_guard" default="false"/>
+  <arg name="midpoints_min_forward_midpoints" default="1"/>
+  <arg name="midpoints_forward_s_min" default="0.25"/>
+  <arg name="midpoints_forward_spacing" default="1.0"/>
+  <arg name="midpoints_fallback_width" default="3.0"/>
+  <arg name="midpoints_enable_curvature_depth_limit" default="true"/>
+  <arg name="midpoints_curvature_depth_kappa_low" default="0.05"/>
+  <arg name="midpoints_curvature_depth_kappa_high" default="0.18"/>
+  <arg name="midpoints_curvature_depth_min" default="1.2"/>
+  <arg name="midpoints_curvature_depth_max" default="4.0"/>
+  <arg name="midpoints_curvature_depth_alpha" default="0.55"/>
+  <!-- Umbrales relajados para aumentar bins reales validos en curva -->
+  <arg name="midpoints_width_min" default="2.2"/>
+  <arg name="midpoints_width_max" default="3.8"/>
+  <arg name="midpoints_track_width" default="3.5"/>
+  <arg name="midpoints_forward_length_limit" default="6.0"/>
+  <arg name="midpoints_boundary_fit_enable" default="true"/>
+  <arg name="midpoints_boundary_smooth_window_bins" default="3"/>
+  <arg name="midpoints_boundary_interp_max_gap_bins" default="1"/>
+  <arg name="midpoints_boundary_use_single_side_inference" default="false"/>
+  <arg name="midpoints_boundary_inference_s_max" default="2.0"/>
+  <arg name="midpoints_boundary_conf_inferred_penalty" default="0.6"/>
+  <arg name="midpoints_boundary_min_bins_for_width_ref" default="2"/>
+  <arg name="midpoints_debug_enable" default="true"/>
+  <arg name="midpoints_debug_topic" default="/estimation/track/midpoints/debug"/>
+  <arg name="midpoints_debug_level" default="full"/>
+  <arg name="midpoints_debug_report_every_n" default="1"/>
+  <arg name="midpoints_debug_max_bins" default="12"/>
+  <arg name="midpoints_debug_console_enable" default="true"/>
+
+  <rosparam command="load" file="$(arg centerline_config)" ns="centerline"/>
+
+  <!-- Pipeline vigente: cones -> midpoints -> centerline -->
+  <node pkg="racecar_track_geometry" type="midpoints_node.py" name="midpoints" output="screen">
+    <param name="s_min" value="$(arg midpoints_s_min)"/>
+    <param name="s_max" value="$(arg midpoints_s_max)"/>
+    <param name="ds_bin" value="$(arg midpoints_ds_bin)"/>
+    <param name="min_per_side" value="$(arg midpoints_min_per_side)"/>
+    <param name="stability/enable_latching" value="$(arg midpoints_enable_latching)"/>
+    <param name="stability/min_points_to_latch" value="$(arg midpoints_min_points_to_latch)"/>
+    <param name="stability/min_mean_confidence_to_latch" value="$(arg midpoints_min_mean_confidence_to_latch)"/>
+    <param name="stability/min_score_to_latch" value="$(arg midpoints_min_score_to_latch)"/>
+    <param name="stability/replace_if_score_improves_ratio" value="$(arg midpoints_replace_if_score_improves_ratio)"/>
+    <param name="stability/replace_if_score_not_worse_ratio" value="$(arg midpoints_replace_if_score_not_worse_ratio)"/>
+    <param name="stability/max_update_rate_hz" value="$(arg midpoints_max_update_rate_hz)"/>
+    <param name="stability/max_hold_seconds" value="$(arg midpoints_max_hold_seconds)"/>
+    <param name="control/enable_forward_guard" value="$(arg midpoints_enable_forward_guard)"/>
+    <param name="control/min_forward_midpoints" value="$(arg midpoints_min_forward_midpoints)"/>
+    <param name="control/forward_s_min" value="$(arg midpoints_forward_s_min)"/>
+    <param name="control/forward_spacing" value="$(arg midpoints_forward_spacing)"/>
+    <param name="control/fallback_width" value="$(arg midpoints_fallback_width)"/>
+    <param name="control/enable_curvature_depth_limit" value="$(arg midpoints_enable_curvature_depth_limit)"/>
+    <param name="control/curvature_depth_kappa_low" value="$(arg midpoints_curvature_depth_kappa_low)"/>
+    <param name="control/curvature_depth_kappa_high" value="$(arg midpoints_curvature_depth_kappa_high)"/>
+    <param name="control/curvature_depth_min" value="$(arg midpoints_curvature_depth_min)"/>
+    <param name="control/curvature_depth_max" value="$(arg midpoints_curvature_depth_max)"/>
+    <param name="control/curvature_depth_alpha" value="$(arg midpoints_curvature_depth_alpha)"/>
+    <param name="width_min" value="$(arg midpoints_width_min)"/>
+    <param name="width_max" value="$(arg midpoints_width_max)"/>
+    <param name="track_width" value="$(arg midpoints_track_width)"/>
+    <param name="forward_length_limit" value="$(arg midpoints_forward_length_limit)"/>
+    <param name="boundary_fit/enable" value="$(arg midpoints_boundary_fit_enable)"/>
+    <param name="boundary_fit/smooth_window_bins" value="$(arg midpoints_boundary_smooth_window_bins)"/>
+    <param name="boundary_fit/interp_max_gap_bins" value="$(arg midpoints_boundary_interp_max_gap_bins)"/>
+    <param name="boundary_fit/use_single_side_inference" value="$(arg midpoints_boundary_use_single_side_inference)"/>
+    <param name="boundary_fit/inference_s_max" value="$(arg midpoints_boundary_inference_s_max)"/>
+    <param name="boundary_fit/conf_inferred_penalty" value="$(arg midpoints_boundary_conf_inferred_penalty)"/>
+    <param name="boundary_fit/min_bins_for_width_ref" value="$(arg midpoints_boundary_min_bins_for_width_ref)"/>
+    <param name="debug/enable" value="$(arg midpoints_debug_enable)"/>
+    <param name="debug/topic" value="$(arg midpoints_debug_topic)"/>
+    <param name="debug/level" value="$(arg midpoints_debug_level)"/>
+    <param name="debug/report_every_n" value="$(arg midpoints_debug_report_every_n)"/>
+    <param name="debug/max_bins" value="$(arg midpoints_debug_max_bins)"/>
+    <param name="debug/console_enable" value="$(arg midpoints_debug_console_enable)"/>
+  </node>
+  <node pkg="racecar_track_geometry" type="centerline_fit_node.py" name="centerline_fit" output="screen"/>
+  <group if="$(arg enable_centerline_to_path)">
+    <node pkg="racecar_track_geometry" type="centerline_to_path_node.py" name="centerline_to_path" output="screen">
+      <param name="topic_centerline" value="$(arg centerline_topic)"/>
+      <param name="topic_path" value="$(arg centerline_path_topic)"/>
+      <param name="set_orientation" value="$(arg centerline_path_set_orientation)"/>
+    </node>
+  </group>
+
+  <group if="$(arg enable_visualization)">
+    <rosparam file="$(arg track_viz_config)" command="load" ns="track"/>
+    <node pkg="racecar_track_geometry" type="track_viz.py" name="track" output="log"/>
+  </group>
+</launch>

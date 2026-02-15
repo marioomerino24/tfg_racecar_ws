@@ -3,7 +3,7 @@ rate_hz: 40
 
 # Tópicos
 odom_topic: "/vesc/odom"             # o el que exponga gazebo_odometry.py
-path_topic: "/track/centerline"      # preferible nav_msgs/Path (tu resampler)
+path_topic: "/planning/track/centerline_path"      # nav_msgs/Path de referencia
 
 # Frames
 odom_frame: "odom"
@@ -14,20 +14,25 @@ wheelbase_L: 0.325          # [m] ajusta a tu URDF/control real
 delta_max_deg: 28.0         # [deg] debe casar con *_steering_hinge_position_controller
 
 # Modo de lookahead: "constant" | "speed" | "curvature" | "hybrid"
-lookahead_mode: "hybrid"
+lookahead_mode: "curvature"
 
 # Parámetros Ld
-L0: 0.8                     # [m] base
-Lmin: 0.4                   # [m]
-Lmax: 2.5                   # [m]
-kv: 0.35                    # [s]   => Ld = L0 + kv*v
-kk: 0.6                     # [m]   => componente 1/|kappa_path| (solo curvature/hybrid)
-eps_kappa: 0.05             # evita división por ~0
-curv_window_m: 0.8          # ventana local para estimar curvatura
+L0: 0.45                    # [m] base
+Lmin: 0.25                  # [m]
+Lmax: 0.80                  # [m]
+kv: 0.08                    # [s]   (no dominante en modo curvature)
+kk: 0.12                    # [m]   => curva cerrada -> Ld corto
+eps_kappa: 0.15             # evita Ld excesivamente pequeño por ruido
+curv_window_m: 1.4          # curvatura mas estable para pistas serradas
 
 # Publicación Ackermann (opcional)
 publish_ackermann: true
-ackermann_topic: "/pure_pursuit/drive"
+ackermann_topic: "/control/ackermann_cmd_mux/input/navigation"
+
+# Salidas principales del selector
+delta_topic: "/planning/pure_pursuit/delta"
+kappa_topic: "/planning/pure_pursuit/kappa"
+ld_topic: "/planning/pure_pursuit/lookahead_distance"
 
 # Debug
 publish_markers: true
