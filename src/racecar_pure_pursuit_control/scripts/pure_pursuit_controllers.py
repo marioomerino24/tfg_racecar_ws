@@ -14,11 +14,11 @@ class PPCtrl(object):
     def __init__(self):
         # -------- Params --------
         self.rate_hz = float(rospy.get_param("~rate_hz", 40.0))
-        self.delta_topic = rospy.get_param("~delta_topic", "/pure_pursuit_target_selector/delta")
-        self.kappa_topic = rospy.get_param("~kappa_topic", "/pure_pursuit_target_selector/kappa")
-        self.ld_topic    = rospy.get_param("~ld_topic",    "/pure_pursuit_target_selector/Ld")
+        self.delta_topic = rospy.get_param("~delta_topic", "/planning/pure_pursuit/delta")
+        self.kappa_topic = rospy.get_param("~kappa_topic", "/planning/pure_pursuit/kappa")
+        self.ld_topic    = rospy.get_param("~ld_topic",    "/planning/pure_pursuit/lookahead_distance")
         self.odom_topic  = rospy.get_param("~odom_topic",  "/vesc/odom")
-        self.ack_topic   = rospy.get_param("~ackermann_topic", "/navigation/ackermann_cmd")
+        self.ack_topic   = rospy.get_param("~ackermann_topic", "/control/ackermann_cmd_mux/input/navigation")
 
         self.L = float(rospy.get_param("~wheelbase_L", 0.325))
         self.delta_max = math.radians(float(rospy.get_param("~delta_max_deg", 28.0)))
@@ -39,6 +39,12 @@ class PPCtrl(object):
 
         self.pass_through_when_idle = bool(rospy.get_param("~pass_through_when_idle", False))
 
+        # Timeouts de seguridad ante datos obsoletos [s]
+        self.delta_timeout = float(rospy.get_param("~delta_timeout", 0.30))
+        self.kappa_timeout = float(rospy.get_param("~kappa_timeout", 0.30))
+        self.ld_timeout = float(rospy.get_param("~ld_timeout", 0.30))
+        self.odom_timeout = float(rospy.get_param("~odom_timeout", 0.50))
+
         # -------- State --------
         self.delta = None         # [rad]
         self.kappa = None         # [1/m]
@@ -46,6 +52,10 @@ class PPCtrl(object):
         self.v_meas = 0.0         # [m/s] (de odom)
         self.v_cmd  = 0.0         # [m/s] (estado interno tras rampas/filtro)
         self.last_t = rospy.Time.now()
+        self.last_delta_t = None
+        self.last_kappa_t = None
+        self.last_ld_t = None
+        self.last_odom_t = None
 
         # -------- IO --------
         rospy.Subscriber(self.delta_topic, Float64, self._cb_delta, queue_size=10)
@@ -60,14 +70,37 @@ class PPCtrl(object):
                       (self.v_max, self.a_lat_max, self.T_h))
 
     # ---- Callbacks ----
-    def _cb_delta(self, msg): self.delta = float(msg.data)
-    def _cb_kappa(self, msg): self.kappa = float(msg.data)
-    def _cb_ld(self, msg):    self.Ld    = float(msg.data)
+    def _cb_delta(self, msg):
+        self.delta = float(msg.data)
+        self.last_delta_t = rospy.Time.now()
+
+    def _cb_kappa(self, msg):
+        self.kappa = float(msg.data)
+        self.last_kappa_t = rospy.Time.now()
+
+    def _cb_ld(self, msg):
+        self.Ld = float(msg.data)
+        self.last_ld_t = rospy.Time.now()
 
     def _cb_odom(self, msg):
         vx = msg.twist.twist.linear.x
         vy = msg.twist.twist.linear.y
         self.v_meas = math.hypot(vx, vy)
+        self.last_odom_t = rospy.Time.now()
+
+    def _publish_stop(self, stamp):
+        ack = AckermannDriveStamped()
+        ack.header.stamp = stamp
+        ack.header.frame_id = "base_link"
+        ack.drive.steering_angle = 0.0
+        ack.drive.speed = 0.0
+        self.v_cmd = 0.0
+        self.pub_ack.publish(ack)
+
+    def _is_fresh(self, now, t_last, timeout):
+        if t_last is None:
+            return False
+        return (now - t_last).to_sec() <= timeout
 
     # ---- Core ----
     def _on_timer(self, _evt):
@@ -77,7 +110,21 @@ class PPCtrl(object):
         self.last_t = now
 
         if self.delta is None or self.kappa is None or self.Ld is None:
-            return  # aún no hay datos
+            self._publish_stop(now)
+            return
+
+        delta_fresh = self._is_fresh(now, self.last_delta_t, self.delta_timeout)
+        kappa_fresh = self._is_fresh(now, self.last_kappa_t, self.kappa_timeout)
+        ld_fresh = self._is_fresh(now, self.last_ld_t, self.ld_timeout)
+        odom_fresh = self._is_fresh(now, self.last_odom_t, self.odom_timeout)
+        if not (delta_fresh and kappa_fresh and ld_fresh and odom_fresh):
+            rospy.logwarn_throttle(
+                1.0,
+                "[pp_control] timeout inputs (delta=%s kappa=%s ld=%s odom=%s) -> stop" %
+                (str(delta_fresh), str(kappa_fresh), str(ld_fresh), str(odom_fresh))
+            )
+            self._publish_stop(now)
+            return
 
         # 1) Saturación coherente de steering
         delta_cmd = clamp(self.delta, -self.delta_max, self.delta_max)

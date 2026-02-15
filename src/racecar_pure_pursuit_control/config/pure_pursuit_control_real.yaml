@@ -1,0 +1,46 @@
+# Perfil para coche real (mismo esquema nominal que simulacion).
+
+# Frecuencia de control
+rate_hz: 40
+
+# Topicos de entrada (salidas del selector)
+delta_topic: "/planning/pure_pursuit/delta"                 # std_msgs/Float64 (rad)
+kappa_topic: "/planning/pure_pursuit/kappa"                 # std_msgs/Float64 (1/m)
+ld_topic:    "/planning/pure_pursuit/lookahead_distance"    # std_msgs/Float64 (m)
+
+# Odometria para medir v
+odom_topic: "/vesc/odom"                                     # nav_msgs/Odometry
+
+# Salida (entrada de navegacion del mux de control)
+ackermann_topic: "/control/ackermann_cmd_mux/input/navigation"  # ackermann_msgs/AckermannDriveStamped
+
+# Geometria vehiculo (para coherencia/saturacion)
+wheelbase_L: 0.325           # [m]
+delta_max_deg: 28.0          # [deg]
+
+# Limites longitudinales
+v_max: 0.75                  # [m/s]
+v_min: 0.08                  # [m/s]
+a_long_acc_max: 0.6          # [m/s^2] rampa subida
+a_long_dec_max: 1.4          # [m/s^2] rampa bajada (frenada)
+
+# Limite por curvatura
+a_lat_max: 1.2               # [m/s^2]
+eps_kappa: 0.05              # [1/m] regularizacion
+
+# Limite por time-headway usando Ld
+use_headway: true
+T_h: 1.0                     # [s]
+
+# Suavizado opcional del comando de velocidad (1er orden)
+use_lowpass: true
+tau_v_ref: 0.2               # [s] (si 0 -> sin filtro)
+
+# Si true, copia v medido a ackermann.drive.speed cuando el target es < v_min (idle)
+pass_through_when_idle: false
+
+# Timeouts de seguridad para evitar reutilizar comandos obsoletos [s]
+delta_timeout: 0.30
+kappa_timeout: 0.30
+ld_timeout: 0.30
+odom_timeout: 0.50
