@@ -67,9 +67,18 @@ Launch unificado para físico + percepción + estimación + control:
 Notas:
 
 - Este launch usa `racecar-v2-teleop.launch.xml` para bringup físico.
-- El control longitudinal usa `pure_pursuit_control_real.yaml`, que publica en
-  `/control/ackermann_cmd_mux/input/navigation`.
+- El control longitudinal usa `pure_pursuit_control.yaml` (config unificada sim/real),
+  que publica en `/control/ackermann_cmd_mux/input/navigation`.
 - Se mantiene el perfil de simulación sin cambios (`fixed_path_control.launch`).
+
+## Configuración centralizada
+
+Las constantes del vehículo se definen una sola vez en:
+
+- `racecar_sim_control/config/vehicle/racecar-v2.yaml` — wheelbase, delta_max, track_width
+
+Los nodos de control leen de `/vehicle/` namespace (cargado por ambos launch pipelines).
+Las diferencias entre plataformas están en `config/overrides/sim.yaml` y `config/overrides/real.yaml`.
 
 Dependencias ROS extra para el stack físico:
 
@@ -82,8 +91,19 @@ Dependencias ROS extra para el stack físico:
 - Coche real final:
   - `roslaunch racecar_sim_control real_vehicle_control.launch`
 
-## Operación en laboratorio
+## Documentacion
 
-Para la puesta en marcha en Jetson TX2 y validación paso a paso en coche real:
+| Documento | Contenido |
+|-----------|-----------|
+| `docs/ARCHITECTURE_OVERVIEW.md` | Pipeline, paquetes, frames TF, config centralizada |
+| `docs/MSG_API.md` | Referencia completa de mensajes custom (`racecar_cone_msgs`) |
+| `docs/LABORATORY_PLAYBOOK.md` | Protocolo de despliegue, seguridad, GO/NO-GO |
+| `docs/RUNBOOK.md` | Referencia rapida de ejecucion y verificacion |
+| `docs/launch_architecture.md` | Convencion de launch files |
+| `docs/ROS_NAMING_STANDARD.md` | Tabla completa de topics canonicos |
+
+## Operacion en laboratorio
+
+Para la puesta en marcha en Jetson TX2 y validacion paso a paso en coche real:
 
 - `docs/LABORATORY_PLAYBOOK.md` (checklists GO/NO-GO, seguridad, bags y troubleshooting)

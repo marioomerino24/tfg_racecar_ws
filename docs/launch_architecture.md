@@ -2,49 +2,93 @@
 
 ## Objetivo
 
-Estandarizar la organización de lanzadores ROS para facilitar:
+Estandarizar la organizacion de lanzadores ROS para facilitar:
 
 - reproducibilidad experimental,
 - mantenimiento incremental,
-- trazabilidad académica de escenarios.
+- trazabilidad academica de escenarios.
 
-## Convención de carpetas
+## Convencion de carpetas
 
-La estructura final usa solo lanzadores canónicos:
+| Carpeta | Proposito | Ejemplo |
+|---------|-----------|---------|
+| `core/` | Lanzadores funcionales por paquete (un nodo o grupo logico) | `cone_detection.launch` |
+| `scenarios/` | Composiciones completas (pipeline entero) | `fixed_path_pipeline.launch` |
+| `bringup/` | Infraestructura base (hardware, controladores) | `low_level_control.launch` |
 
-- `core/`: lanzadores funcionales por paquete.
-- `scenarios/`: composiciones completas (simulación o coche real).
-- `bringup/`: infraestructura base (control/hardware).
+Los aliases de compatibilidad (`fixed_path_control.launch`, `real_vehicle_control.launch`)
+estan en la raiz de `racecar_sim_control/launch/` y simplemente incluyen el scenario correspondiente.
 
-## Mapa canónico actual
+## Mapa canonico
 
-- `racecar_cone_detection_lidar`
-  - `launch/core/cone_detection.launch`
-- `racecar_track_geometry`
-  - `launch/core/track_estimation.launch` (incluye `midpoints`, `centerline_fit`, `centerline_to_path`, `track_viz`)
-- `racecar_sim_gazebo`
-  - `launch/scenarios/sim_perception_pipeline.launch`
-- `racecar_sim_control`
-  - `launch/bringup/low_level_control.launch`
-  - `launch/scenarios/fixed_path_pipeline.launch` (simulación final)
-  - `launch/scenarios/real_vehicle_pipeline.launch` (coche real final)
-  - `launch/fixed_path_control.launch` (alias de simulación final)
-  - `launch/real_vehicle_control.launch` (alias de real final)
-- `racecar_ackermann_mux`
-  - `launch/core/ackermann_mux.launch`
-- `racecar_pure_pursuit`
-  - `launch/core/target_selector.launch`
-- `racecar_pure_pursuit_control`
-  - `launch/core/controller.launch`
-- `racecar_description`
-  - `launch/tools/view_robot_model.launch`
+```
+racecar_cone_detection_lidar/
+  launch/core/cone_detection.launch
+
+racecar_track_geometry/
+  launch/core/track_estimation.launch    (midpoints + centerline + path + viz)
+
+racecar_pure_pursuit/
+  launch/core/target_selector.launch
+
+racecar_pure_pursuit_control/
+  launch/core/controller.launch
+
+racecar_ackermann_mux/
+  launch/core/ackermann_mux.launch
+
+racecar_sim_gazebo/
+  launch/scenarios/sim_perception_pipeline.launch
+
+racecar_sim_control/
+  launch/bringup/low_level_control.launch
+  launch/scenarios/fixed_path_pipeline.launch    (simulacion final)
+  launch/scenarios/real_vehicle_pipeline.launch   (vehiculo real final)
+  launch/fixed_path_control.launch                (alias -> scenarios/)
+  launch/real_vehicle_control.launch              (alias -> scenarios/)
+
+racecar_description/
+  launch/tools/view_robot_model.launch
+
+racecar/
+  launch/includes/common/joy_teleop.launch.xml
+  launch/includes/common/joy_teleop_sim.launch.xml
+  launch/includes/common/sensors.launch.xml
+  launch/includes/racecar-v2-teleop.launch.xml
+  launch/includes/racecar-v2/vesc.launch.xml
+  launch/includes/racecar-v2/static_transforms.launch.xml
+  launch/mux.launch
+```
+
+## Configuracion centralizada en launches
+
+Ambos pipelines (sim y real) cargan las constantes del vehiculo al inicio:
+
+```xml
+<rosparam file="$(find racecar_sim_control)/config/vehicle/racecar-v2.yaml"
+          command="load" ns="vehicle"/>
+```
+
+Esto hace disponible `/vehicle/wheelbase_m`, `/vehicle/delta_max_deg`, etc. en el
+parameter server para todos los nodos del pipeline.
 
 ## Criterios de uso
 
-- Simulación: usar `racecar_sim_control/fixed_path_control.launch`.
-- Coche real: usar `racecar_sim_control/real_vehicle_control.launch`.
-- Evitar crear aliases o launches de depuración en el árbol principal.
+- **Simulacion:** `roslaunch racecar_sim_control fixed_path_control.launch`
+- **Vehiculo real:** `roslaunch racecar_sim_control real_vehicle_control.launch`
+- No crear aliases ni launches de depuracion en el arbol principal.
+- Los parametros de algoritmo van en YAML (`config/`), no hardcodeados en el launch.
 
-## Operación y validación en laboratorio
+## Patron de paso de config a nodos core
 
-- Ver `docs/LABORATORY_PLAYBOOK.md` para protocolo de despliegue, seguridad, criterios GO/NO-GO y trazabilidad experimental.
+Cada launch `core/` recibe la ruta al YAML por argumento:
+
+```xml
+<launch>
+  <arg name="config" default="$(find paquete)/config/default.yaml"/>
+  <rosparam file="$(arg config)" command="load"/>
+  <node pkg="paquete" type="nodo.py" name="nodo" output="screen"/>
+</launch>
+```
+
+Esto permite que los `scenarios/` sustituyan el YAML sin modificar el `core/`.

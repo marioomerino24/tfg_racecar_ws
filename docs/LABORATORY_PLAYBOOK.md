@@ -261,13 +261,24 @@ Plantilla mínima de cierre:
 
 ---
 
-## 9) Notas específicas para este workspace
+## 9) Notas especificas para este workspace
 
 - El pipeline real depende de:
-  - `racecar` (bringup físico),
+  - `racecar` (bringup fisico),
   - `vesc/*`,
   - `ackermann_cmd_mux`,
   - `razor_imu_9dof`.
-- `pure_pursuit_control` incluye watchdog por timeout de entradas; si caducan señales, publica `stop`.
-- `vesc_to_odom/publish_tf` debe permanecer activo para la cadena TF crítica del control.
+- `pure_pursuit_control` incluye watchdog por timeout de entradas; si caducan senales, publica `stop`.
+- `vesc_to_odom/publish_tf` debe permanecer activo para la cadena TF critica del control.
+- Las constantes del vehiculo (wheelbase, delta_max) se cargan desde
+  `racecar_sim_control/config/vehicle/racecar-v2.yaml` en el namespace `/vehicle/`.
+  Si se cambia la geometria del chasis, actualizar ese fichero y verificar coherencia
+  con `racecar/config/racecar-v2/vesc.yaml`.
+
+## 10) Documentacion relacionada
+
+- [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) — pipeline completo y paquetes
+- [MSG_API.md](MSG_API.md) — referencia de mensajes custom
+- [RUNBOOK.md](RUNBOOK.md) — referencia rapida de ejecucion
+- [ROS_NAMING_STANDARD.md](ROS_NAMING_STANDARD.md) — tabla completa de topics canonicos
 
