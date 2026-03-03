@@ -1,0 +1,11 @@
+# ============================================================
+# Constantes fisicas del vehiculo racecar-v2
+# FUENTE UNICA DE VERDAD — todos los nodos leen de aqui.
+#
+# Se carga en /vehicle/ namespace desde el launch raiz.
+# Nodos acceden: rospy.get_param("/vehicle/wheelbase_m")
+# ============================================================
+
+wheelbase_m: 0.325         # [m] distancia entre ejes
+delta_max_deg: 28.0        # [deg] angulo de direccion maximo
+track_width_m: 0.30        # [m] ancho de via (eje a eje ruedas)

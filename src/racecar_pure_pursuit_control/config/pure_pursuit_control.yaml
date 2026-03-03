@@ -12,9 +12,9 @@ odom_topic: "/vesc/odom"                                     # nav_msgs/Odometry
 # Salida (entrada de navegacion del mux de control)
 ackermann_topic: "/control/ackermann_cmd_mux/input/navigation"  # ackermann_msgs/AckermannDriveStamped
 
-# Geometria vehiculo (para coherencia/saturacion)
-wheelbase_L: 0.325           # [m]
-delta_max_deg: 28.0          # [deg]
+# Geometria vehiculo — fuente unica en /vehicle/ (vehicle/racecar-v2.yaml).
+# wheelbase_L y delta_max_deg se resuelven automaticamente desde /vehicle/
+# si no se definen aqui (ver pure_pursuit_controllers.py).
 
 # Limites longitudinales
 v_max: 0.75                  # [m/s]

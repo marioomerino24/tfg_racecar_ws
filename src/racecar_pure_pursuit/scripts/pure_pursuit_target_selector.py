@@ -28,8 +28,10 @@ class PurePursuitTargetSelector(object):
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.base_link_frame = rospy.get_param("~base_link_frame", "base_link")
 
-        self.L = float(rospy.get_param("~wheelbase_L", 0.32))
-        self.delta_max = math.radians(float(rospy.get_param("~delta_max_deg", 28.0)))
+        self.L = float(rospy.get_param("~wheelbase_L",
+                       rospy.get_param("/vehicle/wheelbase_m", 0.325)))
+        self.delta_max = math.radians(float(rospy.get_param("~delta_max_deg",
+                       rospy.get_param("/vehicle/delta_max_deg", 28.0))))
 
         self.mode = rospy.get_param("~lookahead_mode", "hybrid")
         self.L0 = float(rospy.get_param("~L0", 0.8))

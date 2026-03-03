@@ -1,0 +1,8 @@
+# ============================================================
+# Overrides especificos para VEHICULO REAL (Jetson TX2)
+#
+# Solo parametros que difieren del perfil comun.
+# ============================================================
+
+# Inversión de eje de dirección del joystick en hardware real
+joy_steering_scale: -0.34  # negativo: eje invertido en hardware fisico

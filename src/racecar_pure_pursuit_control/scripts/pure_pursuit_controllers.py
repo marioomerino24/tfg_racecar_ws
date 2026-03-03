@@ -20,8 +20,10 @@ class PPCtrl(object):
         self.odom_topic  = rospy.get_param("~odom_topic",  "/vesc/odom")
         self.ack_topic   = rospy.get_param("~ackermann_topic", "/control/ackermann_cmd_mux/input/navigation")
 
-        self.L = float(rospy.get_param("~wheelbase_L", 0.325))
-        self.delta_max = math.radians(float(rospy.get_param("~delta_max_deg", 28.0)))
+        self.L = float(rospy.get_param("~wheelbase_L",
+                       rospy.get_param("/vehicle/wheelbase_m", 0.325)))
+        self.delta_max = math.radians(float(rospy.get_param("~delta_max_deg",
+                       rospy.get_param("/vehicle/delta_max_deg", 28.0))))
 
         self.v_max = float(rospy.get_param("~v_max", 3.0))
         self.v_min = float(rospy.get_param("~v_min", 0.2))

@@ -1,0 +1,8 @@
+# ============================================================
+# Overrides especificos para SIMULACION (Gazebo)
+#
+# Solo parametros que difieren del perfil comun.
+# ============================================================
+
+# Inversión de eje de dirección del joystick en sim
+joy_steering_scale: 0.34   # positivo en Gazebo (sin inversión hardware)

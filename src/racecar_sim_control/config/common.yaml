@@ -1,0 +1,27 @@
+# ============================================================
+# Parametros compartidos del pipeline (sim y real).
+#
+# Estos valores son identicos en ambas plataformas.
+# Las diferencias especificas van en overrides/sim.yaml
+# o overrides/real.yaml.
+# ============================================================
+
+# --- Topics canonicos ---
+topics:
+  scan: "/scan"
+  odom: "/vesc/odom"
+  centerline_path: "/planning/track/centerline_path"
+  ackermann_nav: "/control/ackermann_cmd_mux/input/navigation"
+  ackermann_out: "/control/ackermann_cmd"
+  delta: "/planning/pure_pursuit/delta"
+  kappa: "/planning/pure_pursuit/kappa"
+  lookahead: "/planning/pure_pursuit/lookahead_distance"
+
+# --- Frames ---
+frames:
+  odom: "odom"
+  base_link: "base_link"
+  laser: "laser"
+
+# --- Resample ---
+resample_ds: 0.25          # [m] paso de muestreo de centerline

@@ -9,9 +9,9 @@ path_topic: "/planning/track/centerline_path"      # nav_msgs/Path de referencia
 odom_frame: "odom"
 base_link_frame: "base_link"
 
-# Geometría vehículo
-wheelbase_L: 0.325          # [m] ajusta a tu URDF/control real
-delta_max_deg: 28.0         # [deg] debe casar con *_steering_hinge_position_controller
+# Geometria vehiculo — fuente unica en /vehicle/ (vehicle/racecar-v2.yaml).
+# wheelbase_L y delta_max_deg se resuelven automaticamente desde /vehicle/
+# si no se definen aqui (ver pure_pursuit_target_selector.py).
 
 # Modo de lookahead: "constant" | "speed" | "curvature" | "hybrid"
 lookahead_mode: "curvature"

@@ -18,9 +18,13 @@
   <arg name="enable_pure_pursuit_control" default="true"/>
   <arg name="enable_track_visualization" default="true"/>
   <arg name="pure_pursuit_config" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
-  <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control_real.yaml"/>
+  <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control.yaml"/>
   <arg name="centerline_config" default="$(find racecar_track_geometry)/config/centerline.yaml"/>
   <arg name="track_viz_config" default="$(find racecar_track_geometry)/config/track_viz.yaml"/>
+
+  <!-- Constantes del vehiculo: fuente unica de verdad -->
+  <rosparam file="$(find racecar_sim_control)/config/vehicle/racecar-v2.yaml"
+            command="load" ns="vehicle"/>
 
   <!-- Bringup fisico (mismo patron que tfg_alba_ws) -->
   <include file="$(find racecar)/launch/includes/$(arg racecar_version)-teleop.launch.xml">

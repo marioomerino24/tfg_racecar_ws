@@ -1,10 +1,14 @@
 <!-- -*- mode: XML -*- -->
+<!-- Joy teleop para SIMULACION: misma config que real, solo invierte steering scale. -->
 <launch>
   <arg name="racecar_version" />
   <arg name="joy_teleop_config"
-       default="$(find racecar)/config/$(arg racecar_version)/joy_teleop_sim.yaml" />
+       default="$(find racecar)/config/$(arg racecar_version)/joy_teleop.yaml" />
 
   <rosparam file="$(arg joy_teleop_config)" command="load" />
+
+  <!-- Override: en Gazebo el eje de steering NO esta invertido -->
+  <param name="teleop/human_control/axis_mappings/1/scale" value="0.34" />
 
   <node pkg="joy" type="joy_node" name="joy_node" />
 

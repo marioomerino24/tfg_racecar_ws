@@ -18,6 +18,10 @@
   <arg name="pure_pursuit_config" default="$(find racecar_pure_pursuit)/config/pure_pursuit.yaml"/>
   <arg name="pure_pursuit_control_config" default="$(find racecar_pure_pursuit_control)/config/pure_pursuit_control.yaml"/>
 
+  <!-- Constantes del vehiculo: fuente unica de verdad -->
+  <rosparam file="$(find racecar_sim_control)/config/vehicle/racecar-v2.yaml"
+            command="load" ns="vehicle"/>
+
   <param name="use_sim_time" value="true"/>
 
   <include file="$(find racecar_sim_gazebo)/launch/scenarios/sim_perception_pipeline.launch">
